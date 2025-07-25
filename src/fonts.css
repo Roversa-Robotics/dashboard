@@ -1,0 +1,286 @@
+/* Font System for Roversa Dashboard */
+/* Applied to all pages except sidebar and main dashboard */
+
+/* Font Family Definitions */
+:root {
+  --font-title: 'Bebas Neue', serif;
+  --font-subtitle: 'Open Sans', sans-serif;
+  --font-heading: 'Sniglet', serif;
+  --font-subheading: 'Bevan', serif;
+  --font-body: 'Space Mono', monospace;
+}
+
+/* Global font overrides for specific pages */
+/* Target specific page containers to avoid affecting sidebar and dashboard */
+
+/* Sessions Page */
+.sessions-content,
+.session-view-content {
+  font-family: var(--font-body) !important;
+}
+
+/* Classrooms Page */
+.classrooms-content {
+  font-family: var(--font-body) !important;
+}
+
+/* Login Page */
+.login-content {
+  font-family: var(--font-body) !important;
+}
+
+/* Signup Page */
+.signup-content {
+  font-family: var(--font-body) !important;
+}
+
+/* Home Page */
+.home-content {
+  font-family: var(--font-body) !important;
+}
+
+/* Title elements - h1 tags */
+.sessions-content h1,
+.session-view-content h1,
+.classrooms-content h1,
+.login-content h1,
+.signup-content h1,
+.home-content h1,
+.session-title,
+.classroom-title,
+.login-title h1,
+.signup-title h1,
+.home-title h1,
+.hero-content h1,
+h1 {
+  font-family: 'Bevan', serif !important;
+  font-weight: 400 !important;
+}
+
+/* Subtitle elements - h2 tags */
+.sessions-content h2,
+.session-view-content h2,
+.classrooms-content h2,
+.login-content h2,
+.signup-content h2,
+.home-content h2,
+.session-subtitle,
+.classroom-subtitle,
+.login-title p,
+.signup-title p,
+.home-subtitle {
+  font-family: var(--font-subtitle) !important;
+  font-weight: 400;
+}
+
+/* Heading elements - h3 tags */
+.sessions-content h3,
+.session-view-content h3,
+.classrooms-content h3,
+.login-content h3,
+.signup-content h3,
+.home-content h3,
+.section-heading,
+.card-title,
+.modal-title {
+  font-family: var(--font-heading) !important;
+  font-weight: 400 !important;
+}
+
+/* Subheading elements - h4 tags */
+.sessions-content h4,
+.session-view-content h4,
+.classrooms-content h4,
+.login-content h4,
+.signup-content h4,
+.home-content h4,
+.subsection-heading,
+.card-subtitle {
+  font-family: var(--font-subheading) !important;
+  font-weight: 400;
+}
+
+/* Body text elements - p tags */
+.sessions-content p,
+.session-view-content p,
+.classrooms-content p,
+.login-content p,
+.signup-content p,
+.home-content p,
+.session-description,
+.classroom-description,
+.card-description,
+.modal-content p,
+.form-label,
+.input-label {
+  font-family: var(--font-body) !important;
+  font-weight: 400;
+}
+
+/* Button text */
+.sessions-content button,
+.session-view-content button,
+.classrooms-content button,
+.login-content button,
+.signup-content button,
+.home-content button,
+.create-session-btn,
+.create-classroom-btn,
+.login-submit-btn,
+.signup-submit-btn,
+.nav-button {
+  font-family: var(--font-body) !important;
+  font-weight: 600;
+}
+
+/* Input fields */
+.sessions-content input,
+.session-view-content input,
+.classrooms-content input,
+.login-content input,
+.signup-content input,
+.home-content input,
+.form-input,
+.search-input,
+.login-input,
+.signup-input {
+  font-family: var(--font-body) !important;
+  font-weight: 400;
+}
+
+/* Code and technical content */
+.code-block,
+.terminal-output,
+.data-log,
+.robot-data {
+  font-family: var(--font-body) !important;
+  font-weight: 400;
+}
+
+/* Navigation and menu items */
+.page-nav,
+.breadcrumb,
+.menu-item {
+  font-family: var(--font-body) !important;
+  font-weight: 400;
+}
+
+/* Status and badges */
+.status-badge,
+.progress-label,
+.completion-status {
+  font-family: var(--font-body) !important;
+  font-weight: 600;
+}
+
+/* Tables and lists */
+.data-table,
+.session-list,
+.classroom-list {
+  font-family: var(--font-body) !important;
+  font-weight: 400;
+}
+
+/* Modal and popup content */
+.modal-header h2,
+.popup-title {
+  font-family: var(--font-heading) !important;
+  font-weight: 500;
+}
+
+.modal-body,
+.popup-content {
+  font-family: var(--font-body) !important;
+  font-weight: 400;
+}
+
+/* Form elements */
+.form-group label,
+.field-label {
+  font-family: var(--font-subtitle) !important;
+  font-weight: 600;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  font-family: var(--font-body) !important;
+  font-weight: 400;
+}
+
+/* Error and success messages */
+.error-message,
+.success-message,
+.warning-message {
+  font-family: var(--font-body) !important;
+  font-weight: 600;
+}
+
+/* Tooltips and help text */
+.tooltip,
+.help-text,
+.instruction-text {
+  font-family: var(--font-subtitle) !important;
+  font-weight: 400;
+}
+
+/* Calendar and date elements */
+.calendar-header,
+.date-picker,
+.time-display {
+  font-family: var(--font-body) !important;
+  font-weight: 400;
+}
+
+/* Progress indicators */
+.progress-bar,
+.progress-text,
+.completion-percentage {
+  font-family: var(--font-body) !important;
+  font-weight: 600;
+}
+
+/* Robot and device information */
+.robot-name,
+.device-id,
+.connection-status {
+  font-family: var(--font-body) !important;
+  font-weight: 600;
+}
+
+/* Session and classroom cards */
+.session-card-title,
+.classroom-card-title {
+  font-family: var(--font-heading) !important;
+  font-weight: 700;
+}
+
+.session-card-subtitle,
+.classroom-card-subtitle {
+  font-family: var(--font-subtitle) !important;
+  font-weight: 400;
+}
+
+.session-card-description,
+.classroom-card-description {
+  font-family: var(--font-body) !important;
+  font-weight: 400;
+}
+
+/* Ensure sidebar and dashboard main page are excluded */
+.sidebar,
+.dashboard-home-main-content,
+.dashboard-container .sidebar,
+.dashboard-container .dashboard-home-main-content {
+  /* These will keep their original fonts */
+}
+
+/* Additional specificity for page-specific elements */
+.sessions-container .sessions-content,
+.session-view-container .session-view-content,
+.classrooms-container .classrooms-content,
+.login-container .login-content,
+.signup-container .signup-content,
+.home-container .home-content {
+  /* Ensure these containers get the new fonts */
+} 

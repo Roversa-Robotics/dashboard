@@ -1,0 +1,711 @@
+@import url('https://fonts.googleapis.com/css2?family=Bevan:wght@400&family=Inter:wght@400;700&display=swap');
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background-color: #f5f5f5;
+    color: #222222;
+}
+
+.dashboard-container {
+    display: flex;
+    min-height: 100vh;
+    background-color: #f5f5f5;
+}
+
+/* Sidebar Styles */
+.sidebar {
+    width: 280px;
+    background-color: #4169e1;
+    color: #ffffff;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    height: 100vh;
+    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.08);
+    overflow-y: auto;
+    max-height: 100vh;
+}
+
+.logo {
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.logo h2 {
+    color: #ffffff;
+    background-color: transparent;
+    font-weight: 300;
+    letter-spacing: 2px;
+    margin-bottom: 40px;
+    font-size: 20px;
+}
+
+.logo img {
+    max-width: 200px;
+    max-height: 100px;
+    height: auto;
+    margin-bottom: 10px;
+    background: transparent !important;
+    box-shadow: none !important;
+    display: block;
+}
+
+.nav-menu {
+    flex-grow: 1;
+    background-color: transparent;
+}
+
+.nav-item {
+    padding: 15px;
+    background-color: transparent;
+    color: #ffffff;
+    font-weight: 500;
+    letter-spacing: 2px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s ease;
+    border-radius: 8px;
+    margin: 4px 0;
+    position: relative;
+    z-index: 10;
+}
+
+.nav-item:hover {
+    background-color: #2741a5;
+    transform: translateX(5px);
+    box-shadow: 0 2px 4px rgba(65, 105, 225, 0.08);
+}
+
+.nav-item span {
+    background-color: transparent;
+    color: inherit;
+    display: block;
+    transition: all 0.2s ease;
+}
+
+.nav-item.active {
+    background-color: #2741a5;
+    font-weight: 400;
+}
+
+.nav-item.active span {
+    background-color: transparent;
+}
+
+.nav-item.logout {
+    color: #ffffff;
+    font-weight: 500;
+    margin-top: 12px;
+    transition: background 0.2s, color 0.2s;
+}
+.nav-item.logout:hover {
+    background-color: #ffeaea;
+    color: #ffffff;
+}
+
+.user-profile {
+    background-color: transparent;
+    padding: 20px 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.user-email {
+    background-color: transparent;
+    color: #ffffff;
+    font-weight: 500;
+    font-size: 14px;
+    letter-spacing: 1px;
+}
+
+/* Main Content Styles */
+.main-content {
+    flex-grow: 1;
+    margin-left: 280px;
+    padding: 40px;
+    background-color: #f5f5f5;
+    overflow-y: auto;
+    max-height: 100vh;
+}
+
+.dashboard-home-main-content {
+    background-color: transparent;
+    padding: 0;
+    margin: 0;
+    max-width: none;
+    min-height: auto;
+    overflow-y: auto;
+}
+
+.dashboard-bottom-section {
+    margin-top: 32px;
+    background-color: transparent;
+}
+
+.recent-sessions-section {
+    background-color: transparent;
+    margin-bottom: 32px;
+    max-width: 100%;
+}
+
+/* Restore original .card for Sessions and other pages */
+.card {
+    background-color: #ffffff;
+    color: #222222;
+    padding: 30px;
+    border-radius: 10px;
+    flex: 1;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e0e0e0;
+    font-size: 14px;
+    font-weight: 300;
+    letter-spacing: 1px;
+}
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(65, 105, 225, 0.10);
+}
+.card h3 {
+    font-weight: 300;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+    font-size: 20px;
+    background-color: transparent;
+    color: #222222;
+}
+.card p {
+    color: #555555;
+    font-weight: 300;
+    letter-spacing: 1px;
+    font-size: 14px;
+    background-color: transparent;
+}
+
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 40px;
+    background-color: transparent;
+}
+
+.top-bar h1 {
+    font-weight: 300;
+    letter-spacing: 4px;
+    font-size: 32px;
+    background-color: transparent;
+    color: #222222;
+}
+
+.sign-out {
+    background-color: transparent;
+    border: none;
+    color: #4169e1;
+    cursor: pointer;
+    font-weight: 300;
+    letter-spacing: 2px;
+    font-size: 16px;
+    text-transform: uppercase;
+    padding: 10px 20px;
+    transition: all 0.2s ease;
+    border-radius: 8px;
+}
+
+.sign-out:hover {
+    background-color: #e3eafe;
+    color: #2741a5;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(65, 105, 225, 0.08);
+}
+
+.quick-access {
+    background-color: transparent;
+}
+
+.quick-access h2 {
+    font-weight: 300;
+    letter-spacing: 3px;
+    margin-bottom: 20px;
+    font-size: 24px;
+    background-color: transparent;
+    color: #222222;
+}
+
+.quick-access-cards {
+    display: flex;
+    gap: 30px;
+    background-color: transparent;
+}
+
+.session-info {
+    background: none !important;
+    box-shadow: none !important;
+    border: none !important;
+}
+
+.topbar {
+    background-color: transparent;
+    height: 50px;
+    width: 100%;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.loginbuttontopright {
+    text-align: right;
+    background-color: transparent;
+    margin-right: 20px;
+}
+
+.button {
+    font-size: 20px;
+    font-family: 'Montserrat', sans-serif; 
+    color: #4169e1;
+    background-color: transparent;
+    border: transparent;
+    position: relative;
+    cursor: pointer;
+    font-weight: 300;
+    letter-spacing: 2px;
+}
+
+.button::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+    height: 1px;
+    width: 0%;
+    background-color: #4169e1;
+    transition: width 0.3s ease;
+}
+
+.button:hover::after {
+    width: 100%;
+}
+
+.welcometext {
+    color: #222222;
+    margin-top: 175px;
+    font-family: 'Montserrat', sans-serif; 
+    font-size: 25px;
+    text-align: center;
+    transform: translateY(-75px);
+    animation: slideDown 0.6s ease-out forwards;
+}
+
+.welcometext h1 {
+    color: #222222;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 300;
+    font-size: 40px;
+    letter-spacing: 8px;
+    text-transform: uppercase;
+}
+
+@keyframes slideDown {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+} 
+
+/* --- Dashboard Redesign Styles (scoped) --- */
+.dashboard-home-main-content {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background: #f7f8fa;
+    position: relative;
+}
+
+.dashboard-header {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    margin-bottom: 32px;
+    margin-top: -20px;
+    position: relative;
+}
+
+.dashboard-welcome {
+    font-family: 'Bevan', serif;
+    font-size: 2.5rem;
+    color: #222;
+    margin-bottom: 0;
+    letter-spacing: 1px;
+}
+
+.dashboard-subtitle {
+    font-family: 'Inter', sans-serif;
+    font-size: 1.1rem;
+    color: #444;
+    font-weight: 400;
+    margin-bottom: 8px;
+}
+
+.dashboard-cards-row {
+    display: flex;
+    gap: 32px;
+    margin-bottom: 0;
+}
+
+.dashboard-card {
+    position: relative;
+    width: 250px;
+    height: 320px;
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(65, 105, 225, 0.08);
+    background: #fff;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    display: flex;
+    align-items: flex-end;
+    outline: 5px solid #ffffff;
+}
+.dashboard-card:hover {
+    transform: translateY(-6px) scale(1.03);
+    box-shadow: 0 8px 24px rgba(65, 105, 225, 0.13);
+}
+.dashboard-card-bg {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    object-fit: cover;
+    opacity: 0.92;
+    z-index: 1;
+}
+.dashboard-card-content {
+    position: relative;
+    z-index: 2;
+    background: #effbfe;
+    padding: 18px 40px 16px 20px;
+    border-bottom-left-radius: 18px;
+    border-bottom-right-radius: 18px;
+    width: 100%;
+}
+.dashboard-card-title {
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    font-size: 1.2rem;
+    color: #1a237e;
+    margin-bottom: 4px;
+}
+.dashboard-card-desc {
+    font-family: 'Inter', sans-serif;
+    font-size: 1rem;
+    color: #444;
+    font-weight: 400;
+}
+
+/* Sidebar robotman */
+.robotman-wrapper {
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-end;
+    margin-bottom: 24px;
+    margin-top: 24px;
+    height: 100px;
+    margin-left: 0;
+    margin-right: 0;
+    position: relative;
+    z-index: 1;
+}
+.robotman-img {
+    width: 140px;
+    height: auto;
+    display: block;
+    margin-left: -19px;
+    position: relative;
+    z-index: 1;
+}
+/* Recent Sessions Section */
+.recent-sessions-section {
+    /* position: absolute; */
+    /* right: 40px; */
+    /* bottom: 40px; */
+    width: 260px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(65, 105, 225, 0.08);
+    padding: 24px 24px 18px 24px;
+    font-family: 'Inter', sans-serif;
+    margin: 24px auto 32px auto;
+    display: block;
+}
+.recent-sessions-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #222;
+    margin-bottom: 6px;
+    font-family: 'Inter', sans-serif;
+}
+.recent-sessions-subtitle {
+    color: #555;
+    font-size: 1.05rem;
+    margin-bottom: 24px;
+    font-family: 'Inter', sans-serif;
+    font-weight: 400;
+}
+.recent-sessions-list {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+.recent-session-item {
+    background: #f7f8fa;
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 1rem;
+    color: #222;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    transition: background 0.13s;
+    border: 1px solid #e0e0e0;
+}
+.recent-session-item:hover {
+    background: #e3eafe;
+}
+.recent-session-name {
+    font-weight: 600;
+    color: #1a237e;
+    font-family: 'Inter', sans-serif;
+}
+.recent-session-date {
+    font-size: 0.98rem;
+    color: #888;
+    font-family: 'Inter', sans-serif;
+}
+.recent-session-item.no-sessions {
+    color: #b0b0b0;
+    font-style: italic;
+    justify-content: center;
+}
+
+/* Editable Name Styles */
+.dashboard-welcome span {
+    cursor: pointer;
+    transition: color 0.2s ease;
+    border-bottom: 2px solid transparent;
+    padding: 2px 4px;
+    border-radius: 4px;
+}
+
+.dashboard-welcome span:hover {
+    color: #4169e1;
+    border-bottom-color: #4169e1;
+}
+
+.dashboard-welcome input {
+    background: transparent;
+    border: 2px solid #4169e1;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-family: 'Bevan', serif;
+    font-size: inherit;
+    font-weight: inherit;
+    color: inherit;
+    outline: none;
+    min-width: 120px;
+    transition: all 0.2s ease;
+}
+
+.dashboard-welcome input:focus {
+    box-shadow: 0 0 0 3px rgba(65, 105, 225, 0.1);
+    background: rgba(255, 255, 255, 0.9);
+}
+
+/* Responsive adjustments for dashboard */
+@media (max-width: 1200px) {
+    .dashboard-cards-row {
+        flex-direction: column;
+        gap: 24px;
+        align-items: flex-start;
+    }
+    .recent-sessions-section {
+        position: static;
+        width: 100%;
+        margin-top: 32px;
+    }
+}
+@media (max-width: 900px) {
+    .dashboard-home-main-content {
+        padding: 16px 4px;
+    }
+    .recent-sessions-section {
+        padding: 16px 8px 12px 8px;
+    }
+}
+
+.dashboard-home-main-content .quick-access,
+.dashboard-home-main-content .quick-access-cards {
+    display: none !important;
+} 
+
+/* --- Recent Sessions Card Redesign --- */
+.recent-session-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(65, 105, 225, 0.08);
+  padding: 22px 22px 16px 22px;
+  margin-bottom: 0;
+  cursor: pointer;
+  transition: box-shadow 0.13s, transform 0.13s;
+  border: 1px solid #f0f0f0;
+  display: flex;
+  flex-direction: column;
+}
+.recent-session-card:hover {
+  box-shadow: 0 4px 16px rgba(65, 105, 225, 0.13);
+  transform: translateY(-2px) scale(1.01);
+}
+.recent-session-card-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.recent-session-card-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.recent-session-card-title {
+  font-size: 1.18rem;
+  font-weight: 700;
+  color: #222;
+  margin-bottom: 4px;
+  font-family: 'Inter', sans-serif;
+}
+.recent-session-card-meta {
+  font-size: 1.02rem;
+  color: #888;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Inter', sans-serif;
+  font-weight: 400;
+  margin-bottom: 10px;
+}
+.dot-separator {
+  font-size: 1.2em;
+  color: #b0b0b0;
+  margin: 0 2px;
+}
+.recent-session-progress-bar {
+  width: 100%;
+  height: 4px;
+  background: #ede7f6;
+  border-radius: 2px;
+  margin-top: 8px;
+  position: relative;
+  overflow: visible;
+}
+.recent-session-progress-bar-inner {
+  width: 90%; /* static for now */
+  height: 100%;
+  background: #b39ddb;
+  border-radius: 2px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  transition: width 0.3s;
+}
+.recent-session-progress-dot {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 8px;
+    height: 8px;
+    background: #b39ddb;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px #ede7f6;
+}
+.recent-session-card-menu {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding-left: 10px;
+  padding-right: 2px;
+}
+.recent-session-card-menu svg circle {
+    fill: #888;
+}
+
+.dashboard-home-widgets-row {
+  display: flex;
+  flex-direction: row;
+  gap: 40px;
+  margin-top: 36px;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+@media (max-width: 1100px) {
+  .dashboard-home-widgets-row {
+    flex-direction: column;
+    gap: 24px;
+    align-items: stretch;
+  }
+  .dashboard-calendar-card, .recent-sessions-section {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+} 
+
+.dashboard-calendar-stack {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 260px;
+    gap: 0;
+}
+
+.recent-sessions-section {
+    width: 260px;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(65, 105, 225, 0.08);
+    padding: 24px 24px 18px 24px;
+    font-family: 'Inter', sans-serif;
+    margin: 24px 0 0 0;
+    display: block;
+} 
+
+.active-sessions-section {
+    height: auto !important;
+    min-height: 0 !important;
+    margin-top: 0 !important;
+}
+
+/* Use Inter font for sidebar with specific typography */
+.sidebar, .sidebar * {
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 17.5px !important;
+    line-height: 1 !important;
+    letter-spacing: 0 !important;
+} 
+
+/* Prevent margin shift on hover for dashboard session list */
+.dashboard-card .session-list-item > div:first-child,
+.dashboard-card .session-list-item:hover > div:first-child {
+  margin-right: 0 !important;
+  transition: none !important;
+} 

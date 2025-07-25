@@ -1,0 +1,459 @@
+/* Font system is now handled by fonts.css */
+
+body {
+  background: #f7f9fb;
+  color: #222;
+}
+
+.main-content {
+  background: #f7f9fb;
+  max-width: 1200px;
+  padding: 48px 32px 48px 32px;
+  min-height: 100vh;
+  margin-left: 280px;
+}
+
+h1, h2, h3 {
+  font-weight: 700;
+  color: #222;
+  margin-bottom: 18px;
+}
+
+h1 {
+  font-size: 2.2rem;
+}
+h2 {
+  font-size: 1.5rem;
+}
+h3 {
+  font-size: 1.15rem;
+}
+
+.session-info, .modal {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 4px 24px rgba(65,105,225,0.08);
+  padding: 36px 32px 28px 32px;
+  margin-bottom: 32px;
+  border: none;
+}
+
+/* --- Buttons --- */
+button, .session-btn, .create-btn, .cancel-btn, .clear-data-btn, .connection-btn {
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  transition: all 0.2s;
+  outline: none;
+  border: none;
+  box-shadow: none;
+  padding: 12px 28px;
+  margin: 0 6px;
+}
+
+.create-btn, .session-btn, .connection-btn.connect {
+  background: #4169e1;
+  color: #fff;
+  border: none;
+}
+.create-btn:disabled, .session-btn:disabled, .connection-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.create-btn:hover, .session-btn:hover, .connection-btn.connect:hover {
+  background: #274bb5;
+}
+
+.cancel-btn, .clear-data-btn, .connection-btn.disconnect {
+  background: #fff;
+  color: #4169e1;
+  border: 1.5px solid #4169e1;
+}
+.cancel-btn:hover, .clear-data-btn:hover, .connection-btn.disconnect:hover {
+  background: #f7f9fb;
+}
+
+/* --- Inputs --- */
+input, select, .session-name-input {
+  border-radius: 8px;
+  border: 1.5px solid #e0e0e0;
+  padding: 12px 10px;
+  font-size: 1.08rem;
+  background: #fff;
+  color: #222;
+  transition: border-color 0.2s;
+}
+input:focus, select:focus, .session-name-input:focus {
+  border-color: #4169e1;
+  outline: none;
+}
+
+.input-group label {
+  color: #4169e1;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+/* --- Modal --- */
+.modal {
+  min-width: 340px;
+  max-width: 98vw;
+  position: relative;
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(65,105,225,0.13);
+  padding: 36px 32px 28px 32px;
+}
+.modal h2 {
+  color: #222;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 10px;
+}
+.modal-content {
+  margin-bottom: 24px;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+/* --- Misc --- */
+.section-divider {
+  height: 1px;
+  background: #e0e0e0;
+  margin: 32px 0;
+  border-radius: 2px;
+}
+
+.status-badge.active {
+  background: #4169e1;
+  color: #fff;
+}
+.status-badge.paused {
+  background: #ff9800;
+  color: #fff;
+}
+.status-badge.ended {
+  background: #6c757d;
+  color: #fff;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: #e0e0e0;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-track {
+  background: #f7f9fb;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.5; }
+  100% { opacity: 1; }
+}
+
+/* NEW: Robot Assignment Styles */
+.robot-cards-container {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  gap: 16px;
+  width: 100%;
+}
+
+.robot-card {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  width: 100% !important;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(65, 105, 225, 0.08);
+  border: 2px solid #e0e0e0;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  position: relative;
+  padding: 8px 16px;
+  text-align: left;
+  height: auto !important;
+  min-height: unset !important;
+}
+
+.robot-card img {
+  margin-right: 16px;
+  height: 80px;
+  width: 54px;
+  object-fit: contain;
+  display: block;
+}
+
+.robot-assignment-btn {
+  transition: all 0.2s ease;
+}
+
+.robot-assignment-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.robot-card-assignment {
+  transition: all 0.2s ease;
+}
+
+.robot-card-assignment:hover {
+  background: #d1e7ff !important;
+}
+
+/* Tag Selection Mode Styles */
+.robot-card.tag-selected {
+  border-color: #4169e1 !important;
+  background: #f8f9ff !important;
+  box-shadow: 0 4px 16px rgba(65, 105, 225, 0.15) !important;
+}
+
+.robot-card.tag-selected:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(65, 105, 225, 0.2) !important;
+}
+
+/* Section Header Styles */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.section-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700 !important;
+  color: #222;
+}
+
+/* Assignment Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #222;
+  font-weight: 500;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  color: #666;
+  transition: all 0.2s ease;
+}
+
+.modal-close:hover {
+  background: #f0f0f0;
+  color: #222;
+}
+
+.modal-body {
+  margin-bottom: 20px;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.btn-primary {
+  background: #4169e1;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  background: #274bb5;
+}
+
+.btn-secondary {
+  background: #f8f9fa;
+  color: #666;
+  border: 1px solid #e0e0e0;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.btn-secondary:hover {
+  background: #e9ecef;
+  color: #222;
+}
+
+@media (max-width: 900px) {
+  .main-content {
+    margin-left: 0;
+    padding: 16px 4px;
+    max-width: 100vw;
+  }
+  .session-info, .modal {
+    padding: 16px 6px 12px 6px;
+  }
+}
+
+.robot-card-device-id {
+  font-family: 'Fira Mono', 'Menlo', 'Monaco', 'Consolas', 'Liberation Mono', 'Courier New', monospace;
+  font-size: 1.08rem;
+  font-weight: 600;
+  color: #222;
+  background: #f3f4f6;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid #e0e0e0;
+  display: inline-block;
+  margin-bottom: 0;
+  cursor: text;
+}
+
+/* Serial port overlay fade-in/out */
+.serial-popup-overlay {
+  opacity: 1;
+  transition: opacity 0.4s cubic-bezier(0.4,0,0.2,1), background 0.4s cubic-bezier(0.4,0,0.2,1);
+}
+.serial-popup-overlay.fade-in {
+  opacity: 1;
+}
+.serial-popup-overlay.fade-out {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Bounce animation for connection graphic */
+@keyframes bounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  20% { transform: translateY(-5px) scale(1.01); }
+  40% { transform: translateY(0) scale(1); }
+  60% { transform: translateY(-5px) scale(1.01); }
+  80% { transform: translateY(0) scale(1); }
+}
+.connection-bounce {
+  animation: bounce 1.6s infinite cubic-bezier(0.4,0,0.2,1);
+}
+
+/* --- Program Animation Modal --- */
+.program-animation-grid {
+  position: relative;
+  width: 320px;
+  height: 320px;
+  margin: 0 auto;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.program-animation-robot {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  z-index: 2;
+  transition: left 0.7s, top 0.7s, transform 0.7s;
+}
+
+/* --- Responsive robot card styles --- */
+@media (max-width: 900px) {
+  .robot-cards-container {
+    padding-top: 12px !important;
+    gap: 12px !important;
+  }
+  .robot-card {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    min-height: 160px !important;
+    padding: 12px 8px 24px 8px !important;
+    gap: 10px !important;
+  }
+  .robot-card img {
+    width: 48px !important;
+    height: 56px !important;
+    margin-right: 0 !important;
+    margin-bottom: 8px !important;
+  }
+  .robot-card-device-id {
+    font-size: 0.95rem !important;
+    max-width: 120px !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: inline-block;
+  }
+  .dropdown {
+    right: 4px !important;
+    top: 8px !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .robot-cards-container {
+    padding-top: 6px !important;
+    gap: 8px !important;
+  }
+  .robot-card {
+    min-height: 120px !important;
+    padding: 8px 2px 16px 2px !important;
+    font-size: 0.95rem !important;
+  }
+  .robot-card-device-id {
+    font-size: 0.85rem !important;
+    max-width: 70px !important;
+  }
+  .dropdown-menu {
+    min-width: 100px !important;
+    font-size: 0.9rem !important;
+  }
+}
