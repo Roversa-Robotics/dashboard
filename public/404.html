@@ -1,0 +1,5 @@
+<script>
+  // Redirect all 404s to index.html for SPA routing
+  var path = window.location.pathname.replace('/dashboard', '');
+  window.location.replace('/dashboard/' + (path ? '#' + path : ''));
+</script> 
