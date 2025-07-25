@@ -10,6 +10,9 @@ import DashboardCalendar from './DashboardCalendar';
 import chargingStationImg from '/src/chargingstation.png';
 import dashboardBatteryDesign from '/src/dashboardbatterydesign.png';
 import excitedFlowerImg from '/src/excited_flower.png';
+import myrobots from '../myrobots.png';
+import myclassrooms from '../myclassrooms.png';
+import accessguides from '../accessguides.png';
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -219,7 +222,7 @@ function Dashboard() {
           <div className="dashboard-cards-row" style={{ display: 'flex', gap: 24, marginBottom: 0, paddingBottom: 0 }}>
             {/* My Sessions card */}
             <div className="dashboard-card fade-in-scale animate-on-mount-delay-1" onClick={() => navigate('/sessions')} style={{ flex: '1 1 320px', minWidth: 250, maxWidth: 250 }}>
-              <img src="/src/myrobots.png" alt="My Sessions" className="dashboard-card-bg" />
+              <img src={myrobots} alt="My Sessions" className="dashboard-card-bg" />
               <div className="dashboard-card-content">
                 <div className="dashboard-card-title">My Sessions</div>
                 <div className="dashboard-card-desc">View and manage active sessions</div>
@@ -227,7 +230,7 @@ function Dashboard() {
             </div>
             {/* My Classrooms card */}
             <div className="dashboard-card fade-in-scale animate-on-mount-delay-3" onClick={() => navigate('/classrooms')} style={{ flex: '1 1 320px', minWidth: 250, maxWidth: 250 }}>
-              <img src="/src/myclassrooms.png" alt="My Classrooms" className="dashboard-card-bg" />
+              <img src={myclassrooms} alt="My Classrooms" className="dashboard-card-bg" />
               <div className="dashboard-card-content">
                 <div className="dashboard-card-title">My Classrooms</div>
                 <div className="dashboard-card-desc">Manage your students and groups</div>
@@ -235,7 +238,7 @@ function Dashboard() {
             </div>
             {/* Access Lessons card */}
             <div className="dashboard-card fade-in-scale animate-on-mount-delay-4" onClick={() => navigate('/lessons')} style={{ flex: '1 1 320px', minWidth: 250, maxWidth: 250 }}>
-              <img src="/src/accessguides.png" alt="Access Lessons" className="dashboard-card-bg" />
+              <img src={accessguides} alt="Access Lessons" className="dashboard-card-bg" />
               <div className="dashboard-card-content">
                 <div className="dashboard-card-title">Access Lessons</div>
                 <div className="dashboard-card-desc">View and manage lessons</div>

@@ -4,6 +4,7 @@ import { auth } from '../Firebase.jsx';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useEffect } from 'react';
 import { useState } from 'react';
+import logo from '../Official_Logo_White.png';
 
 function Home() {
   const navigate = useNavigate();
@@ -26,7 +27,7 @@ function Home() {
       {/* Header */}
       <div className="home-header slide-in-from-top">
         <div className="logo" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
-          <img src="/src/Official_Logo_White.png" alt="Roversa Robotics" />
+          <img src={logo} alt="Roversa Robotics" />
         </div>
         <div className="header-nav">
           <button className="nav-button fade-in-scale animate-on-mount-delay-1" onClick={() => navigate('/login')}>Login</button>
