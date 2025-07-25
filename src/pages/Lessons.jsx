@@ -149,16 +149,16 @@ export default function Lessons() {
     setNewLesson({ title: '', overview: '', age: '', link: '' });
   };
 
-  const handleDeleteLesson = (id) => {
-    setLessons(prev => {
-      const updated = prev.filter(l => l.id !== id);
-      // If the deleted lesson is active, switch to another
-      if (activeTab === id) {
-        const next = updated[0]?.id || '';
-        setActiveTab(next);
-      }
-      return updated;
-    });
+  const handleDeleteLesson = async (id) => {
+    const user = auth.currentUser;
+    const updated = lessons.filter(l => l.id !== id);
+    await saveLessons(user, updated);
+    setLessons(updated);
+    // If the deleted lesson is active, switch to another
+    if (activeTab === id) {
+      const next = updated[0]?.id || '';
+      setActiveTab(next);
+    }
     setShowDeleteModal(false);
     setLessonToDelete(null);
   };

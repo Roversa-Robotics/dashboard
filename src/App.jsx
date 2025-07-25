@@ -26,7 +26,7 @@ function AppRoutes() {
     
     if (wasOnSessionView && !isOnSessionView) {
       // We're leaving a session view page
-      disconnectSerial();
+      window.location.reload();
     }
     
     prevLocation.current = location;

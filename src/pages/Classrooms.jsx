@@ -94,13 +94,13 @@ function Classrooms() {
   const handleClassroomNameChange = (e) => {
     setEditClassroomName(e.target.value);
   };
-  const saveClassroomName = () => {
+  const saveClassroomName = async () => {
     if (!selectedClassroom || !editClassroomName.trim()) return;
     if (editClassroomName === selectedClassroom.name) return;
     const updatedClassrooms = classrooms.map(c =>
       c.id === selectedClassroom.id ? { ...c, name: editClassroomName } : c
     );
-    localStorage.setItem('roversaClassrooms', JSON.stringify(updatedClassrooms));
+    await saveClassrooms(user, updatedClassrooms);
     setClassrooms(updatedClassrooms);
     setSelectedClassroom({ ...selectedClassroom, name: editClassroomName });
   };
@@ -161,7 +161,7 @@ function Classrooms() {
       groups: []
     };
     const updatedClassrooms = [newClassroom, ...classroomsArr];
-    await setDoc(docRef, { classrooms: updatedClassrooms });
+    await saveClassrooms(user, updatedClassrooms);
     setClassrooms(updatedClassrooms);
     setShowCreateModal(false);
     setNewClassroomName('');
@@ -169,7 +169,7 @@ function Classrooms() {
     setSelectedTheme('blue'); // Reset to blue theme
   };
 
-  const handleAddStudent = () => {
+  const handleAddStudent = async () => {
     if (!newStudentName.trim() || !newStudentEmail.trim()) return;
 
     const newStudent = {
@@ -189,7 +189,7 @@ function Classrooms() {
       return classroom;
     });
 
-    localStorage.setItem('roversaClassrooms', JSON.stringify(updatedClassrooms));
+    await saveClassrooms(user, updatedClassrooms);
     setClassrooms(updatedClassrooms);
     setShowAddStudentModal(false);
     setNewStudentName('');
@@ -197,7 +197,7 @@ function Classrooms() {
     setSelectedClassroom(updatedClassrooms.find(c => c.id === selectedClassroom.id));
   };
 
-  const handleAddGroup = () => {
+  const handleAddGroup = async () => {
     if (!newGroupName.trim()) return;
 
     const newGroup = {
@@ -217,14 +217,14 @@ function Classrooms() {
       return classroom;
     });
 
-    localStorage.setItem('roversaClassrooms', JSON.stringify(updatedClassrooms));
+    await saveClassrooms(user, updatedClassrooms);
     setClassrooms(updatedClassrooms);
     setShowAddGroupModal(false);
     setNewGroupName('');
     setSelectedClassroom(updatedClassrooms.find(c => c.id === selectedClassroom.id));
   };
 
-  const handleAddStudentToGroup = (groupId, studentId) => {
+  const handleAddStudentToGroup = async (groupId, studentId) => {
     const updatedClassrooms = classrooms.map(classroom => {
       if (classroom.id === selectedClassroom.id) {
         const updatedGroups = classroom.groups.map(group => {
@@ -244,12 +244,12 @@ function Classrooms() {
       return classroom;
     });
 
-    localStorage.setItem('roversaClassrooms', JSON.stringify(updatedClassrooms));
+    await saveClassrooms(user, updatedClassrooms);
     setClassrooms(updatedClassrooms);
     setSelectedClassroom(updatedClassrooms.find(c => c.id === selectedClassroom.id));
   };
 
-  const handleRemoveStudentFromGroup = (groupId, studentId) => {
+  const handleRemoveStudentFromGroup = async (groupId, studentId) => {
     const updatedClassrooms = classrooms.map(classroom => {
       if (classroom.id === selectedClassroom.id) {
         const updatedGroups = classroom.groups.map(group => {
@@ -266,7 +266,7 @@ function Classrooms() {
       return classroom;
     });
 
-    localStorage.setItem('roversaClassrooms', JSON.stringify(updatedClassrooms));
+    await saveClassrooms(user, updatedClassrooms);
     setClassrooms(updatedClassrooms);
     setSelectedClassroom(updatedClassrooms.find(c => c.id === selectedClassroom.id));
   };
@@ -276,7 +276,7 @@ function Classrooms() {
     setShowDeleteModal(true);
   };
 
-  const handleDeleteStudent = (classroomId, studentId) => {
+  const handleDeleteStudent = async (classroomId, studentId) => {
     if (confirm('Are you sure you want to remove this student? This action cannot be undone.')) {
       const updatedClassrooms = classrooms.map(classroom => {
         if (classroom.id === classroomId) {
@@ -290,7 +290,7 @@ function Classrooms() {
         return classroom;
       });
 
-      localStorage.setItem('roversaClassrooms', JSON.stringify(updatedClassrooms));
+      await saveClassrooms(user, updatedClassrooms);
       setClassrooms(updatedClassrooms);
       if (selectedClassroom?.id === classroomId) {
         setSelectedClassroom(updatedClassrooms.find(c => c.id === classroomId));
@@ -298,7 +298,7 @@ function Classrooms() {
     }
   };
 
-  const handleDeleteGroup = (classroomId, groupId) => {
+  const handleDeleteGroup = async (classroomId, groupId) => {
     if (confirm('Are you sure you want to delete this group? This action cannot be undone.')) {
       const updatedClassrooms = classrooms.map(classroom => {
         if (classroom.id === classroomId) {
@@ -310,7 +310,7 @@ function Classrooms() {
         return classroom;
       });
 
-      localStorage.setItem('roversaClassrooms', JSON.stringify(updatedClassrooms));
+      await saveClassrooms(user, updatedClassrooms);
       setClassrooms(updatedClassrooms);
       if (selectedClassroom?.id === classroomId) {
         setSelectedClassroom(updatedClassrooms.find(c => c.id === classroomId));
@@ -785,7 +785,7 @@ function Classrooms() {
               <button className="btn-primary" style={{ background: '#dc3545', borderColor: '#dc3545' }} onClick={() => {
                 if (!classroomToDelete) return;
                 const updatedClassrooms = classrooms.filter(c => c.id !== classroomToDelete);
-                localStorage.setItem('roversaClassrooms', JSON.stringify(updatedClassrooms));
+                saveClassrooms(user, updatedClassrooms);
                 setClassrooms(updatedClassrooms);
                 if (selectedClassroom?.id === classroomToDelete) {
                   setSelectedClassroom(null);

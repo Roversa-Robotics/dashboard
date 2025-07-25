@@ -92,24 +92,24 @@ function formatDateTime(isoString) {
 
 // Add a helper function for robot status
 function getRobotStatus({ lastBatteryTime, firstBatteryTime, lastProgramTime }, now = new Date()) {
-  // Powered off: no battery ever, or last battery > 10s ago
+  // If no battery message within past 10 seconds, powered off
   if (!lastBatteryTime || ((now - lastBatteryTime) / 1000 > 10)) {
     return 'inactive_battery';
   }
-  // Active: recent program
-  if (lastProgramTime && ((now - lastProgramTime) / 1000 <= 180)) {
-    return 'active';
-  }
-  // Inactive: old program
-  if (lastProgramTime && ((now - lastProgramTime) / 1000 > 180)) {
-    return 'inactive';
-  }
-  // Inactive: no program, first battery > 3min ago
+  // If first battery message is over 3 minutes old and no program has ever been run/tested, then inactive
   if (!lastProgramTime && firstBatteryTime && ((now - firstBatteryTime) / 1000 > 180)) {
     return 'inactive';
   }
+  // If no program within the past 3 minutes, inactive
+  if (lastProgramTime && ((now - lastProgramTime) / 1000 > 180)) {
+    return 'inactive';
+  }
+  // If recent program (within 3 minutes), active
+  if (lastProgramTime && ((now - lastProgramTime) / 1000 <= 180)) {
+    return 'active';
+  }
   // Default fallback
-  return 'inactive_battery';
+  return 'idle';
 }
 
 // Helper to calculate program duration
@@ -202,6 +202,13 @@ function SessionView() {
   const [highlightedRobot, setHighlightedRobot] = useState(null);
   const [highlightedProgram, setHighlightedProgram] = useState(null);
   const highlightTimeoutRef = useRef();
+  const [user, setUser] = useState(() => auth.currentUser);
+  useEffect(() => {
+  const unsubscribe = auth.onAuthStateChanged((firebaseUser) => {
+    setUser(firebaseUser);
+  });
+  return () => unsubscribe();
+  }, []);
   // Remove activeTab state since we're removing tabs
 
   // Track if component is mounted
@@ -231,10 +238,16 @@ function SessionView() {
     };
   }, []);
 
-  // NEW: Load classrooms
-  const loadClassrooms = () => {
-    const savedClassrooms = JSON.parse(localStorage.getItem('roversaClassrooms') || '[]');
-    setClassrooms(savedClassrooms);
+  // NEW: Load classrooms from Firestore
+  const loadClassrooms = async (user) => {
+    if (!user) return;
+    const docRef = doc(db, 'users', user.uid, 'appdata', 'classrooms');
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      setClassrooms(docSnap.data().classrooms || []);
+    } else {
+      setClassrooms([]);
+    }
   };
 
   // NEW: Get classroom by ID
@@ -293,58 +306,47 @@ function SessionView() {
     setHasUnsavedChanges(hasChanges);
   }, [robots, receivedData, sessionName, completedRobots]);
 
+
   // Only load session data on first mount
   const hasLoadedSessionRef = useRef(false);
   useEffect(() => {
-    if (!hasLoadedSessionRef.current && sessionId) {
+    if (!hasLoadedSessionRef.current && sessionId && user) {
       hasLoadedSessionRef.current = true;
-      const user = auth.currentUser;
+      setIsLoadingSession(true);
+      setSessionLoadError(null);
       loadSessions(user).then(savedSessions => {
-        const existingSession = savedSessions.find(s => String(s.id) === String(sessionId));
-        if (existingSession) {
-          setSessionData(existingSession);
-          setSessionName(existingSession.name);
-          setSessionStatus(existingSession.status);
-          setRobots(existingSession.robots || {});
-          setReceivedData(existingSession.receivedData || []);
-          setCompletedRobots(new Set(existingSession.completedRobots || []));
-          setLastSavedState({
-            robots: existingSession.robots || {},
-            receivedData: existingSession.receivedData || [],
-            sessionName: existingSession.name,
-            completedRobots: new Set(existingSession.completedRobots || [])
-          });
+        const found = savedSessions.find(s => String(s.id) === String(sessionId));
+        if (found) {
+          setSessionData(found);
+          setSessionName(found.name);
+          setSessionStatus(found.status);
+          setRobots(found.robots || {});
+          setReceivedData(found.receivedData || {});
+          setCompletedRobots(new Set(found.completedRobots || []));
+          setLessonCompletions(found.lessonCompletions ? Object.fromEntries(Object.entries(found.lessonCompletions).map(([k, v]) => [k, new Set(v)])) : {});
+          setIsLoadingSession(false);
         } else {
-          // Only create and save a new session if there is truly no session with that ID
-          const newSession = {
-            id: sessionId,
-            name: initialSessionName,
-            createdAt: new Date().toISOString(),
-            createdBy: auth.currentUser?.email || 'Unknown',
-            status: 'active',
-            robots: {},
-            receivedData: [],
-            completedRobots: []
-          };
-          const updatedSessions = [...savedSessions, newSession];
-          saveSessions(user, updatedSessions);
-          setSessionData(newSession);
-          setSessionName(initialSessionName);
-          setSessionStatus('active');
-          setLastSavedState({
-            robots: {},
-            receivedData: [],
-            sessionName: initialSessionName,
-            completedRobots: new Set()
-          });
+          setIsLoadingSession(false);
+          setSessionLoadError('Session not found.');
+          setTimeout(() => navigate('/sessions'), 2000);
         }
+      }).catch(err => {
+        setIsLoadingSession(false);
+        setSessionLoadError('Error loading session.');
       });
     }
-  }, [sessionId]);
+  }, [sessionId, user, navigate]);
 
-  // NEW: Load classrooms on mount
+  // NEW: Load classrooms on mount and when user changes
   useEffect(() => {
-    loadClassrooms();
+    const unsubscribe = auth.onAuthStateChanged((user) => {
+      if (user) {
+        loadClassrooms(user);
+      } else {
+        setClassrooms([]);
+      }
+    });
+    return () => unsubscribe();
   }, []);
 
   // NEW: Set classroom after classrooms are loaded
@@ -361,7 +363,6 @@ function SessionView() {
     try {
       // Only save if session is active and sessionData exists
       if (sessionStatus === 'active' && sessionData && sessionData.id) {
-        const user = auth.currentUser;
         loadSessions(user).then(savedSessions => {
           const updatedSession = {
             ...sessionData,
@@ -370,6 +371,9 @@ function SessionView() {
             robots: robots,
             receivedData: receivedData,
             completedRobots: Array.from(completedRobots),
+            lessonCompletions: Object.fromEntries(
+              Object.entries(lessonCompletions).map(([k, v]) => [k, Array.from(v)])
+            ),
             lastUpdated: new Date().toISOString()
           };
           const existingIndex = savedSessions.findIndex(s => String(s.id) === String(sessionData.id));
@@ -439,13 +443,35 @@ function SessionView() {
   };
 
   const disconnectFromMicrobit = async () => {
-    // First, set connected to false to stop the reading loop
+    // Save session before disconnecting
+    if (sessionStatus === 'active' && sessionData && sessionData.id) {
+      await new Promise(resolve => {
+        loadSessions(user).then(savedSessions => {
+          const updatedSession = {
+            ...sessionData,
+            name: sessionName,
+            status: sessionStatus,
+            robots,
+            receivedData,
+            completedRobots: Array.from(completedRobots),
+            lessonCompletions: Object.fromEntries(
+              Object.entries(lessonCompletions).map(([k, v]) => [k, Array.from(v)])
+            ),
+            lastUpdated: new Date().toISOString()
+          };
+          const existingIndex = savedSessions.findIndex(s => String(s.id) === String(sessionData.id));
+          if (existingIndex >= 0) {
+            savedSessions[existingIndex] = updatedSession;
+          } else {
+            savedSessions.push(updatedSession);
+          }
+          saveSessions(user, savedSessions).then(resolve);
+        });
+      });
+    }
     setIsConnected(false);
-    // Wait a bit for the reading loop to stop
     await new Promise(resolve => setTimeout(resolve, 100));
-    // Then disconnect the serial port
     await disconnectSerial();
-    // Reload the page to ensure clean state
     window.location.reload();
   };
 
@@ -481,23 +507,25 @@ function SessionView() {
           setRobots(prev => ({
             ...prev,
             [deviceId]: {
+              ...prev[deviceId],
               deviceId,
               lastSeen: timestamp,
               dataCount: (prev[deviceId]?.dataCount || 0) + 1,
               latestData: parsedData,
               rawData: data,
               firstSeen: prev[deviceId]?.firstSeen || timestamp,
-              status: prev[deviceId]?.status || 'inactive', // PRESERVE STATUS
-              // Store battery data separately, always include timestamp
+              status: prev[deviceId]?.status || 'inactive',
               batteryData: { voltage: batteryLevel, timestamp },
-              lastBatteryTime: new Date().toISOString(),
-              // Keep existing button events
-              buttonEvents: prev[deviceId]?.buttonEvents || []
+              lastBatteryTime: timestamp,
+              firstBatteryTime: prev[deviceId]?.firstBatteryTime || timestamp,
+              buttonEvents: prev[deviceId]?.buttonEvents || [],
+              assignedTo: prev[deviceId]?.assignedTo || null,
+              assignmentTime: prev[deviceId]?.assignmentTime || null
             }
           }));
           
           // Also add to received data for the log view
-          setReceivedData(prev => [...prev, { timestamp, data }]);
+          setReceivedData(prev => [ ...(Array.isArray(prev) ? prev : []), { timestamp, data } ]);
           
           // Immediately save data when new data is received
           setTimeout(() => autosaveSession(), 100);
@@ -536,12 +564,15 @@ function SessionView() {
                   program: program || null,
                   timestamp: timestamp
                 }
-              ].slice(-10) // Keep last 10 button events
+              ].slice(-10), // Keep last 10 button events
+              // Preserve assignment
+              assignedTo: prev[deviceId]?.assignedTo || null,
+              assignmentTime: prev[deviceId]?.assignmentTime || null
             }
           }));
           
           // Also add to received data for the log view
-          setReceivedData(prev => [...prev, { timestamp, data }]);
+          setReceivedData(prev => [ ...(Array.isArray(prev) ? prev : []), { timestamp, data } ]);
           
           // Immediately save data when new data is received
           setTimeout(() => autosaveSession(), 100);
@@ -560,22 +591,24 @@ function SessionView() {
           setRobots(prev => ({
             ...prev,
             [deviceId]: {
+              ...prev[deviceId],
               deviceId,
               lastSeen: timestamp,
               dataCount: (prev[deviceId]?.dataCount || 0) + 1,
               latestData: parsedData,
               rawData: data,
               firstSeen: prev[deviceId]?.firstSeen || timestamp,
-              status: prev[deviceId]?.status || 'inactive', // PRESERVE STATUS
-              // Preserve existing battery data
-              batteryData: prev[deviceId]?.batteryData || prev[deviceId]?.latestData?.voltage ? { voltage: prev[deviceId]?.latestData?.voltage } : null,
-              // Keep existing button events
-              buttonEvents: prev[deviceId]?.buttonEvents || []
+              status: prev[deviceId]?.status || 'inactive',
+              batteryData: { voltage: batteryLevel, timestamp },
+              lastBatteryTime: timestamp,
+              buttonEvents: prev[deviceId]?.buttonEvents || [],
+              assignedTo: prev[deviceId]?.assignedTo || null,
+              assignmentTime: prev[deviceId]?.assignmentTime || null
             }
           }));
           
           // Also add to received data for the log view
-          setReceivedData(prev => [...prev, { timestamp, data }]);
+          setReceivedData(prev => [ ...(Array.isArray(prev) ? prev : []), { timestamp, data } ]);
           
           // Immediately save data when new data is received
           setTimeout(() => autosaveSession(), 100);
@@ -588,12 +621,7 @@ function SessionView() {
     if (!window.confirm('Are you sure you want to clear all robot data and received data? This cannot be undone.')) return;
     setReceivedData([]);
     setRobots({});
-    // Update last saved state to reflect the cleared state
-    setLastSavedState(prev => ({
-      ...prev,
-      robots: {},
-      receivedData: []
-    }));
+    // Do NOT update lastSavedState here!
   };
 
   const clearRobots = () => {
@@ -702,6 +730,33 @@ function SessionView() {
         setCopy.add(deviceId);
       }
       updated[selectedLessonId] = setCopy;
+      // Persist to Firestore and reload session
+      if (sessionData && sessionData.id) {
+        // Convert sets to arrays for Firestore
+        const completionsToSave = Object.fromEntries(
+          Object.entries(updated).map(([k, v]) => [k, Array.from(v)])
+        );
+        const updatedSession = { ...sessionData, lessonCompletions: completionsToSave };
+        loadSessions(user).then(async sessions => {
+          const idx = sessions.findIndex(s => String(s.id) === String(sessionData.id));
+          if (idx >= 0) {
+            sessions[idx] = updatedSession;
+          } else {
+            sessions.push(updatedSession);
+          }
+          await saveSessions(user, sessions);
+          // Reload session from Firestore
+          const freshSessions = await loadSessions(user);
+          const found = freshSessions.find(s => String(s.id) === String(sessionData.id));
+          if (found && found.lessonCompletions) {
+            setLessonCompletions(
+              Object.fromEntries(
+                Object.entries(found.lessonCompletions).map(([k, v]) => [k, new Set(v)])
+              )
+            );
+          }
+        });
+      }
       return updated;
     });
   };
@@ -722,7 +777,6 @@ function SessionView() {
     };
     
     // Save to localStorage
-    const user = auth.currentUser;
     loadSessions(user).then(savedSessions => {
       const existingIndex = savedSessions.findIndex(s => String(s.id) === String(sessionData.id));
       if (existingIndex >= 0) {
@@ -765,9 +819,12 @@ function SessionView() {
       status: 'ended',
       robots: robots,
       receivedData: receivedData,
+      completedRobots: Array.from(completedRobots),
+      lessonCompletions: Object.fromEntries(
+        Object.entries(lessonCompletions).map(([k, v]) => [k, Array.from(v)])
+      ),
       endedAt: new Date().toISOString()
     };
-    const user = auth.currentUser;
     loadSessions(user).then(savedSessions => {
       const existingIndex = savedSessions.findIndex(s => String(s.id) === String(sessionData.id));
       if (existingIndex >= 0) {
@@ -799,11 +856,14 @@ function SessionView() {
       status: 'active',
       robots: robots,
       receivedData: receivedData,
+      completedRobots: Array.from(completedRobots),
+      lessonCompletions: Object.fromEntries(
+        Object.entries(lessonCompletions).map(([k, v]) => [k, Array.from(v)])
+      ),
       resumedAt: new Date().toISOString()
     };
     
     // Save to localStorage
-    const user = auth.currentUser;
     loadSessions(user).then(savedSessions => {
       const existingIndex = savedSessions.findIndex(s => String(s.id) === String(sessionData.id));
       if (existingIndex >= 0) {
@@ -888,20 +948,28 @@ function SessionView() {
 
   // Check if user is logged in
   useEffect(() => {
-    const unsubscribe = auth.onAuthStateChanged((user) => {
-      if (!user) {
-        navigate('/login');
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (!user) return;
+      const docRef = doc(db, 'users', user.uid, 'appdata', 'lessons');
+      const docSnap = await getDoc(docRef);
+      let loaded = [];
+      if (docSnap.exists()) {
+        const data = docSnap.data().lessons || [];
+        loaded = data.map(l => ({
+          id: l.id,
+          name: l.title || l.name || '',
+          link: l.link || '',
+        }));
       }
+      // Merge with defaults, avoid duplicates by id
+      const merged = [...DEFAULT_LESSONS];
+      loaded.forEach(l => {
+        if (!merged.some(def => def.id === l.id)) merged.push(l);
+      });
+      setLessons([{ id: 'none', name: 'None' }, ...merged]);
     });
-    return () => {
-      unsubscribe();
-      // Only call handleLeaveSession if component is unmounting due to auth change
-      // Don't call it during normal navigation
-      if (isMounted.current && !auth.currentUser) {
-        handleLeaveSession();
-      }
-    };
-  }, [navigate]);
+    return () => unsubscribe();
+  }, []);
 
   // Update session data when robots or received data changes
   useEffect(() => {
@@ -978,7 +1046,7 @@ function SessionView() {
           if (lastBatteryTime && isNaN(lastBatteryTime.getTime())) {
             lastBatteryTime = Date.parse(robot.lastBatteryTime) ? new Date(Date.parse(robot.lastBatteryTime)) : null;
           }
-          let firstBatteryTime = robot.batteryData && robot.batteryData.timestamp ? new Date(robot.batteryData.timestamp) : null;
+          let firstBatteryTime = robot.firstBatteryTime ? new Date(robot.firstBatteryTime) : null;
           if (firstBatteryTime && isNaN(firstBatteryTime.getTime())) {
             firstBatteryTime = Date.parse(robot.batteryData.timestamp) ? new Date(Date.parse(robot.batteryData.timestamp)) : null;
           }
@@ -995,6 +1063,15 @@ function SessionView() {
               }
             }
           }
+          console.log('Status check', deviceId, {
+            lastBatteryTime: robot.lastBatteryTime,
+            parsed: robot.lastBatteryTime ? new Date(robot.lastBatteryTime) : null,
+            now,
+            diff: robot.lastBatteryTime ? (now - new Date(robot.lastBatteryTime)) / 1000 : null,
+            firstBatteryTime: robot.firstBatteryTime,
+            parsedFirst: robot.firstBatteryTime ? new Date(robot.firstBatteryTime) : null,
+            lastProgramTime: robot.buttonEvents && robot.buttonEvents.length > 0 ? robot.buttonEvents[robot.buttonEvents.length - 1].timestamp : null
+          });
           const newStatus = getRobotStatus({ lastBatteryTime, firstBatteryTime, lastProgramTime }, now);
           if (robot.status !== newStatus) {
             updated[deviceId] = { ...robot, status: newStatus };
@@ -1021,27 +1098,27 @@ function SessionView() {
   // Disconnect from micro:bit on page unload/refresh
   useEffect(() => {
     const handleBeforeUnload = (e) => {
-      if (isConnected || (sessionStatus === 'active' && sessionData)) {
-        // Save data and disconnect before page unload
-        handleLeaveSession();
+      if (sessionStatus === 'active' && sessionData && sessionData.id) {
+        // Save session data to localStorage synchronously
+        localStorage.setItem('unsavedSession', JSON.stringify({
+          ...sessionData,
+          name: sessionName,
+          status: sessionStatus,
+          robots,
+          receivedData,
+          completedRobots: Array.from(completedRobots),
+          lessonCompletions: Object.fromEntries(
+            Object.entries(lessonCompletions).map(([k, v]) => [k, Array.from(v)])
+          ),
+          lastUpdated: new Date().toISOString()
+        }));
       }
     };
-    
-    const handleVisibilityChange = () => {
-      if (document.hidden && sessionStatus === 'active' && sessionData) {
-        // Save data when user switches tabs or minimizes window
-        autosaveSession();
-      }
-    };
-    
     window.addEventListener('beforeunload', handleBeforeUnload);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [isConnected, sessionStatus, sessionData]);
+  }, [sessionStatus, sessionData, sessionName, robots, receivedData, completedRobots, lessonCompletions]);
 
   // Autosave active session to localStorage (guarded, only when mounted)
   useEffect(() => {
@@ -1051,7 +1128,6 @@ function SessionView() {
       sessionData &&
       sessionData.id
     ) {
-      const user = auth.currentUser;
       loadSessions(user).then(savedSessions => {
         const existingIndex = savedSessions.findIndex(s => String(s.id) === String(sessionData.id));
         if (existingIndex >= 0) {
@@ -1062,7 +1138,11 @@ function SessionView() {
               name: sessionName,
               status: sessionStatus,
               robots: robots,
-              receivedData: receivedData
+              receivedData: receivedData,
+              completedRobots: Array.from(completedRobots),
+              lessonCompletions: Object.fromEntries(
+                Object.entries(lessonCompletions).map(([k, v]) => [k, Array.from(v)])
+              )
             };
             saveSessions(user, savedSessions);
           }
@@ -1075,7 +1155,6 @@ function SessionView() {
   const autosaveSession = () => {
     try {
       if (sessionStatus === 'active' && sessionData && sessionData.id) {
-        const user = auth.currentUser;
         loadSessions(user).then(savedSessions => {
           const updatedSession = {
             ...sessionData,
@@ -1084,6 +1163,9 @@ function SessionView() {
             robots: robots,
             receivedData: receivedData,
             completedRobots: Array.from(completedRobots),
+            lessonCompletions: Object.fromEntries(
+              Object.entries(lessonCompletions).map(([k, v]) => [k, Array.from(v)])
+            ),
             lastUpdated: new Date().toISOString()
           };
           const existingIndex = savedSessions.findIndex(s => String(s.id) === String(sessionData.id));
@@ -1098,7 +1180,10 @@ function SessionView() {
             robots: robots,
             receivedData: receivedData,
             sessionName: sessionName,
-            completedRobots: completedRobots
+            completedRobots: completedRobots,
+            lessonCompletions: Object.fromEntries(
+              Object.entries(lessonCompletions).map(([k, v]) => [k, Array.from(v)])
+            )
           });
         });
       }
@@ -1212,12 +1297,10 @@ function SessionView() {
   };
 
   // NEW: Robot assignment functions
-  const assignRobotToStudent = (deviceId, studentId) => {
+  const assignRobotToStudent = async (deviceId, studentId) => {
     if (!selectedClassroom) return;
-    
     const student = selectedClassroom.students.find(s => s.id === studentId);
     if (!student) return;
-
     const updatedRobots = {
       ...robots,
       [deviceId]: {
@@ -1231,16 +1314,30 @@ function SessionView() {
         assignmentTime: new Date().toISOString()
       }
     };
-    
     setRobots(updatedRobots);
+    // Persist to Firestore and reload session
+    if (sessionData && sessionData.id) {
+      const updatedSession = { ...sessionData, robots: updatedRobots };
+      loadSessions(user).then(async sessions => {
+        const idx = sessions.findIndex(s => String(s.id) === String(sessionData.id));
+        if (idx >= 0) {
+          sessions[idx] = updatedSession;
+        } else {
+          sessions.push(updatedSession);
+        }
+        await saveSessions(user, sessions);
+        // Reload session from Firestore
+        const freshSessions = await loadSessions(user);
+        const found = freshSessions.find(s => String(s.id) === String(sessionData.id));
+        if (found) setRobots(found.robots || {});
+      });
+    }
   };
 
-  const assignRobotToGroup = (deviceId, groupId) => {
+  const assignRobotToGroup = async (deviceId, groupId) => {
     if (!selectedClassroom) return;
-    
     const group = selectedClassroom.groups.find(g => g.id === groupId);
     if (!group) return;
-
     const updatedRobots = {
       ...robots,
       [deviceId]: {
@@ -1254,8 +1351,24 @@ function SessionView() {
         assignmentTime: new Date().toISOString()
       }
     };
-    
     setRobots(updatedRobots);
+    // Persist to Firestore and reload session
+    if (sessionData && sessionData.id) {
+      const updatedSession = { ...sessionData, robots: updatedRobots };
+      loadSessions(user).then(async sessions => {
+        const idx = sessions.findIndex(s => String(s.id) === String(sessionData.id));
+        if (idx >= 0) {
+          sessions[idx] = updatedSession;
+        } else {
+          sessions.push(updatedSession);
+        }
+        await saveSessions(user, sessions);
+        // Reload session from Firestore
+        const freshSessions = await loadSessions(user);
+        const found = freshSessions.find(s => String(s.id) === String(sessionData.id));
+        if (found) setRobots(found.robots || {});
+      });
+    }
   };
 
   const unassignRobot = (deviceId) => {
@@ -1298,9 +1411,8 @@ function SessionView() {
     return name && name.length > 12 ? name.slice(0, 12) + '...' : name;
   };
 
-  const assignTagToMultipleRobots = (type, id, name, additionalData = {}) => {
+  const assignTagToMultipleRobots = async (type, id, name, additionalData = {}) => {
     const updatedRobots = { ...robots };
-    
     selectedRobotsForTagging.forEach(deviceId => {
       updatedRobots[deviceId] = {
         ...updatedRobots[deviceId],
@@ -1313,11 +1425,27 @@ function SessionView() {
         assignmentTime: new Date().toISOString()
       };
     });
-    
     setRobots(updatedRobots);
     setSelectedRobotsForTagging(new Set());
     setIsTagSelectionMode(false);
     setShowTagModal(false);
+    // Persist to Firestore and reload session
+    if (sessionData && sessionData.id) {
+      const updatedSession = { ...sessionData, robots: updatedRobots };
+      loadSessions(user).then(async sessions => {
+        const idx = sessions.findIndex(s => String(s.id) === String(sessionData.id));
+        if (idx >= 0) {
+          sessions[idx] = updatedSession;
+        } else {
+          sessions.push(updatedSession);
+        }
+        await saveSessions(user, sessions);
+        // Reload session from Firestore
+        const freshSessions = await loadSessions(user);
+        const found = freshSessions.find(s => String(s.id) === String(sessionData.id));
+        if (found) setRobots(found.robots || {});
+      });
+    }
   };
 
   const assignTagToStudent = (studentId) => {
@@ -1342,9 +1470,8 @@ function SessionView() {
     });
   };
 
-  const removeTagsFromSelectedRobots = () => {
+  const removeTagsFromSelectedRobots = async () => {
     const updatedRobots = { ...robots };
-    
     selectedRobotsForTagging.forEach(deviceId => {
       updatedRobots[deviceId] = {
         ...updatedRobots[deviceId],
@@ -1352,11 +1479,27 @@ function SessionView() {
         assignmentTime: null
       };
     });
-    
     setRobots(updatedRobots);
     setSelectedRobotsForTagging(new Set());
     setIsTagSelectionMode(false);
     setShowTagModal(false);
+    // Persist to Firestore and reload session
+    if (sessionData && sessionData.id) {
+      const updatedSession = { ...sessionData, robots: updatedRobots };
+      loadSessions(user).then(async sessions => {
+        const idx = sessions.findIndex(s => String(s.id) === String(sessionData.id));
+        if (idx >= 0) {
+          sessions[idx] = updatedSession;
+        } else {
+          sessions.push(updatedSession);
+        }
+        await saveSessions(user, sessions);
+        // Reload session from Firestore
+        const freshSessions = await loadSessions(user);
+        const found = freshSessions.find(s => String(s.id) === String(sessionData.id));
+        if (found) setRobots(found.robots || {});
+      });
+    }
   };
 
   // NEW: Function to highlight robot and program
@@ -1446,7 +1589,6 @@ function SessionView() {
   const handleSaveSession = () => {
     try {
       if (sessionStatus === 'active' && sessionData && sessionData.id) {
-        const user = auth.currentUser;
         loadSessions(user).then(savedSessions => {
           const updatedSession = {
             ...sessionData,
@@ -1455,6 +1597,9 @@ function SessionView() {
             robots: robots,
             receivedData: receivedData,
             completedRobots: Array.from(completedRobots),
+            lessonCompletions: Object.fromEntries(
+              Object.entries(lessonCompletions).map(([k, v]) => [k, Array.from(v)])
+            ),
             lastUpdated: new Date().toISOString()
           };
           const existingIndex = savedSessions.findIndex(s => String(s.id) === String(sessionData.id));
@@ -1571,7 +1716,9 @@ function SessionView() {
                           ? '#b0b0b0'
                           : robot.status === 'active'
                             ? '#28a745'
-                            : '#dc3545',
+                            : robot.status === 'idle'
+                              ? '#333'
+                              : '#dc3545',
                     color: '#fff',
                     fontWeight: 700,
                     fontSize: '0.85rem',
@@ -1597,7 +1744,9 @@ function SessionView() {
                         ? 'Powered off'
                         : robot.status === 'active'
                           ? 'Active'
-                          : 'Inactive'}
+                          : robot.status === 'idle'
+                            ? 'Idle'
+                            : 'Inactive'}
                 </div>
                 {/* Ellipsis menu - top right */}
                 <div
@@ -1730,7 +1879,7 @@ function SessionView() {
                   </label>
                   {/* Robot image */}
                   <img 
-                    src="/src/robotgraphic.png" 
+                    src={robotGraphic} 
                     alt="Robot" 
                     style={{
                       width: '60px',
@@ -1880,45 +2029,81 @@ function SessionView() {
                       )}
                       
                       {/* Edit Tags button */}
-                      {selectedClassroom && (
-                        <button
-                          onClick={e => {
-                            e.stopPropagation();
-                            setSelectedRobotForAssignment(robot.deviceId);
-                            setShowAssignmentModal(true);
-                          }}
-                          style={{
-                            padding: '6px 12px',
-                            background: '#a259e1',
-                            border: 'none',
-                            borderRadius: '6px',
-                            cursor: 'pointer',
-                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '8px',
-                            fontSize: '12px',
-                            fontWeight: '500',
-                            color: '#fff',
-                            height: '32px',
-                            minWidth: '100px',
-                            boxShadow: '0 1px 4px rgba(162, 89, 225, 0.2)'
-                          }}
-                          title="Edit robot tags"
-                        >
-                          <svg 
-                            xmlns="http://www.w3.org/2000/svg" 
-                            fill="none" 
-                            viewBox="0 0 24 24" 
-                            strokeWidth={1.5} 
-                            stroke="currentColor" 
-                            style={{ width: '14px', height: '14px' }}
+                      {sessionData && sessionData.classroomId && (
+                        selectedClassroom ? (
+                          <button
+                            onClick={e => {
+                              e.stopPropagation();
+                              setSelectedRobotForAssignment(robot.deviceId);
+                              setShowAssignmentModal(true);
+                            }}
+                            style={{
+                              padding: '6px 12px',
+                              background: '#a259e1',
+                              border: 'none',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              fontSize: '12px',
+                              fontWeight: '500',
+                              color: '#fff',
+                              height: '32px',
+                              minWidth: '100px',
+                              boxShadow: '0 1px 4px rgba(162, 89, 225, 0.2)'
+                            }}
+                            title="Edit robot tags"
                           >
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.732.699 2.431 0l4.318-4.318c.699-.699.699-1.732 0-2.431L9.568 3Z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6Z" />
-                          </svg>
-                          Assign
-                        </button>
+                            <svg 
+                              xmlns="http://www.w3.org/2000/svg" 
+                              fill="none" 
+                              viewBox="0 0 24 24" 
+                              strokeWidth={1.5} 
+                              stroke="currentColor" 
+                              style={{ width: '14px', height: '14px' }}
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.732.699 2.431 0l4.318-4.318c.699-.699.699-1.732 0-2.431L9.568 3Z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6Z" />
+                            </svg>
+                            Assign
+                          </button>
+                        ) : (
+                          <button
+                            disabled
+                            style={{
+                              padding: '6px 12px',
+                              background: '#e0e0e0',
+                              border: 'none',
+                              borderRadius: '6px',
+                              cursor: 'not-allowed',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              fontSize: '12px',
+                              fontWeight: '500',
+                              color: '#888',
+                              height: '32px',
+                              minWidth: '100px',
+                              boxShadow: 'none'
+                            }}
+                            title="Classroom data not loaded"
+                          >
+                            <svg 
+                              xmlns="http://www.w3.org/2000/svg" 
+                              fill="none" 
+                              viewBox="0 0 24 24" 
+                              strokeWidth={1.5} 
+                              stroke="currentColor" 
+                              style={{ width: '14px', height: '14px' }}
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.732.699 2.431 0l4.318-4.318c.699-.699.699-1.732 0-2.431L9.568 3Z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6Z" />
+                            </svg>
+                            Assign (classroom unavailable)
+                          </button>
+                        )
                       )}
                     </div>
                   </div>
@@ -2280,7 +2465,6 @@ function SessionView() {
 
   // Handler for Resume button
   const handleResumeClick = () => {
-    const user = auth.currentUser;
     loadSessions(user).then(savedSessions => {
       const otherActive = savedSessions.find(
         s => s.status === 'active' && String(s.id) !== String(sessionData?.id)
@@ -2391,6 +2575,60 @@ function SessionView() {
   // Add state for the unsaved changes leave modal
   const [showLeaveUnsavedModal, setShowLeaveUnsavedModal] = useState(false);
   const [pendingLeaveAction, setPendingLeaveAction] = useState(null);
+
+  // Add effect to warn about unsaved changes on reload or navigation
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (sessionStatus === 'active' && sessionData && sessionData.id) {
+        // Save session data to localStorage synchronously
+        localStorage.setItem('unsavedSession', JSON.stringify({
+          ...sessionData,
+          name: sessionName,
+          status: sessionStatus,
+          robots,
+          receivedData,
+          completedRobots: Array.from(completedRobots),
+          lessonCompletions: Object.fromEntries(
+            Object.entries(lessonCompletions).map(([k, v]) => [k, Array.from(v)])
+          ),
+          lastUpdated: new Date().toISOString()
+        }));
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [sessionStatus, sessionData, sessionName, robots, receivedData, completedRobots, lessonCompletions]);
+
+  useEffect(() => {
+    return () => {
+      disconnectSerial();
+      setIsConnected(false);
+    };
+  }, []);
+
+  const [isLoadingSession, setIsLoadingSession] = useState(false);
+  const [sessionLoadError, setSessionLoadError] = useState(null);
+
+  // After all useState hooks, before other useEffects
+useEffect(() => {
+  const unsaved = localStorage.getItem('unsavedSession');
+  if (unsaved && user) {
+    const session = JSON.parse(unsaved);
+    loadSessions(user).then(savedSessions => {
+      const idx = savedSessions.findIndex(s => String(s.id) === String(session.id));
+      if (idx >= 0) {
+        savedSessions[idx] = session;
+      } else {
+        savedSessions.push(session);
+      }
+      saveSessions(user, savedSessions);
+      localStorage.removeItem('unsavedSession');
+    });
+  }
+}, [user]);
+
 
   return (
     <div className="dashboard-container">
@@ -2959,41 +3197,43 @@ function SessionView() {
                               </svg>
                               Delete Selected
                             </button>
-                            <button
-                              className="fade-in-scale animate-on-mount-delay-5"
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                                fontSize: '14px',
-                                padding: '8px 12px',
-                                height: '36px',
-                                background: '#4169e1',
-                                color: '#fff',
-                                border: 'none',
-                                borderRadius: '6px',
-                                boxShadow: '0 2px 8px rgba(65, 105, 225, 0.15)',
-                                cursor: 'pointer',
-                                transition: 'background 0.2s'
-                              }}
-                              onClick={() => {
-                                setCompletedRobots(prev => {
-                                  const newSet = new Set(prev);
-                                  const allSelectedDone = Array.from(selectedRobotsForTagging).every(id => completedRobots.has(id));
-                                  if (allSelectedDone) {
-                                    selectedRobotsForTagging.forEach(id => newSet.delete(id));
-                                  } else {
-                                    selectedRobotsForTagging.forEach(id => newSet.add(id));
-                                  }
-                                  return newSet;
-                                });
-                              }}
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '14px', height: '14px' }}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                              </svg>
-                              {allSelectedDone ? 'Undo Done' : 'Mark as Done'}
-                            </button>
+                            {selectedLessonId !== 'none' && (
+                              <button
+                                className="fade-in-scale animate-on-mount-delay-5"
+                                style={{
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                  fontSize: '14px',
+                                  padding: '8px 12px',
+                                  height: '36px',
+                                  background: '#4169e1',
+                                  color: '#fff',
+                                  border: 'none',
+                                  borderRadius: '6px',
+                                  boxShadow: '0 2px 8px rgba(65, 105, 225, 0.15)',
+                                  cursor: 'pointer',
+                                  transition: 'background 0.2s'
+                                }}
+                                onClick={() => {
+                                  setCompletedRobots(prev => {
+                                    const newSet = new Set(prev);
+                                    const allSelectedDone = Array.from(selectedRobotsForTagging).every(id => completedRobots.has(id));
+                                    if (allSelectedDone) {
+                                      selectedRobotsForTagging.forEach(id => newSet.delete(id));
+                                    } else {
+                                      selectedRobotsForTagging.forEach(id => newSet.add(id));
+                                    }
+                                    return newSet;
+                                  });
+                                }}
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '14px', height: '14px' }}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                </svg>
+                                {allSelectedDone ? 'Undo Done' : 'Mark as Done'}
+                              </button>
+                            )}
                             {selectedClassroom && (
                               <button 
                                 className="fade-in-scale animate-on-mount-delay-5"
@@ -3659,7 +3899,6 @@ function SessionView() {
               </button>
               <button className="btn-primary" onClick={() => {
                 // Pause all other active sessions
-                const user = auth.currentUser;
                 loadSessions(user).then(savedSessions => {
                   const updatedSessions = savedSessions.map(s =>
                     s.status === 'active' && String(s.id) !== String(sessionData?.id)
@@ -3717,7 +3956,6 @@ function SessionView() {
               <button className="btn-primary" style={{ background: '#dc3545', borderColor: '#dc3545' }} onClick={() => {
                 // Actually delete the session
                 if (!sessionData) return;
-                const user = auth.currentUser;
                 loadSessions(user).then(savedSessions => {
                   const filteredSessions = savedSessions.filter(s => String(s.id) !== String(sessionData.id));
                   saveSessions(user, filteredSessions);

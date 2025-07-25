@@ -52,10 +52,17 @@ function Sessions() {
     return classroom ? classroom.name : null;
   };
 
-  const handleCreateSession = () => {
-    // Check for active session
-    const savedSessions = JSON.parse(localStorage.getItem('roversaSessions') || '[]');
-    const activeSession = savedSessions.find(s => s.status === 'active');
+  const handleCreateSession = async () => {
+    // Check for active session in Firestore
+    const user = auth.currentUser;
+    if (!user) return;
+    const docRef = doc(db, 'users', user.uid, 'appdata', 'sessions');
+    const docSnap = await getDoc(docRef);
+    let sessions = [];
+    if (docSnap.exists()) {
+      sessions = docSnap.data().sessions || [];
+    }
+    const activeSession = sessions.find(s => s.status === 'active');
     if (activeSession) {
       setPendingSessionData({
         id: Date.now().toString(),
@@ -88,12 +95,17 @@ function Sessions() {
     if (docSnap.exists()) {
       sessions = docSnap.data().sessions || [];
     }
+    console.log('Sessions.jsx: sessions before:', sessions);
+    console.log('Sessions.jsx: newSession:', newSession);
     sessions.push(newSession);
-    await setDoc(docRef, { sessions });
+    await setDoc(docRef, { sessions }); // Wait for Firestore to finish
+    console.log('Sessions.jsx: sessions after:', sessions);
     setActiveSessions([newSession, ...activeSessions]);
     setShowCreateModal(false);
     setSessionName('');
     setSelectedClassroomId('');
+    // Only navigate after Firestore save is complete:
+    console.log('Sessions.jsx: navigating to sessionId:', newSession.id);
     navigate(`/sessions/${newSession.id}?name=${encodeURIComponent(newSession.name)}`);
   };
 
@@ -379,27 +391,27 @@ function Sessions() {
               }}>
                 Cancel
               </button>
-              <button className="btn-primary" onClick={() => {
+              <button className="btn-primary" onClick={async () => {
                 // Pause the current active session
                 const user = auth.currentUser;
                 if (!user) return;
                 const docRef = doc(db, 'users', user.uid, 'appdata', 'sessions');
-                getDoc(docRef).then(docSnap => {
-                  if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    const sessions = data.sessions || [];
-                    const activeSessionIndex = sessions.findIndex(s => s.status === 'active');
-                if (activeSessionIndex !== -1) {
-                      sessions[activeSessionIndex].status = 'paused';
-                      setDoc(docRef, { sessions });
-                    }
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                  const data = docSnap.data();
+                  const sessions = data.sessions || [];
+                  const activeSessionIndex = sessions.findIndex(s => s.status === 'active');
+                  if (activeSessionIndex !== -1) {
+                    sessions[activeSessionIndex].status = 'paused';
+                    await setDoc(docRef, { sessions });
+                  }
                 }
-                });
                 setShowSessionConflictModal(false);
                 if (pendingSessionData) {
-                  actuallyCreateSession(pendingSessionData);
+                  await actuallyCreateSession(pendingSessionData);
                   setPendingSessionData(null);
                 }
+                await loadSessions(user); // Reload sessions to update UI
               }}>
                 Proceed
               </button>
@@ -427,22 +439,21 @@ function Sessions() {
               }}>
                 Cancel
               </button>
-              <button className="btn-primary" style={{ background: '#dc3545', borderColor: '#dc3545' }} onClick={() => {
+              <button className="btn-primary" style={{ background: '#dc3545', borderColor: '#dc3545' }} onClick={async () => {
                 // Actually delete the session
                 const user = auth.currentUser;
                 if (!user) return;
                 const docRef = doc(db, 'users', user.uid, 'appdata', 'sessions');
-                getDoc(docRef).then(docSnap => {
-                  if (docSnap.exists()) {
-                    const data = docSnap.data();
-                    const sessions = data.sessions || [];
-                    const filteredSessions = sessions.filter(s => String(s.id) !== String(sessionToDelete));
-                    setDoc(docRef, { sessions: filteredSessions });
-                  }
-                });
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                  const data = docSnap.data();
+                  const sessions = data.sessions || [];
+                  const filteredSessions = sessions.filter(s => String(s.id) !== String(sessionToDelete));
+                  await setDoc(docRef, { sessions: filteredSessions });
+                }
                 setShowDeleteModal(false);
                 setSessionToDelete(null);
-                loadSessions(user); // Reload the sessions
+                await loadSessions(user); // Reload the sessions after deletion
               }}>
                 Delete
               </button>
