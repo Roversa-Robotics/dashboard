@@ -58,7 +58,7 @@ function Login() {
         <div className="login-card fade-in-scale animate-on-mount-delay-2">
           <div className="login-title animate-on-mount-delay-3">
             <h1>Welcome Back</h1>
-            <p>Sign in to your Roversa Dashboard</p>
+            <p>Sign in to your account</p>
           </div>
 
           {error && (
