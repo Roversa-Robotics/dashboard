@@ -7,6 +7,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { useEffect } from 'react';
 import { db } from '../Firebase.jsx';
 import { doc, setDoc } from 'firebase/firestore';
+import logo from '../Official_Logo_White.png';
 
 function Signup() {
   const navigate = useNavigate();
@@ -24,6 +25,8 @@ function Signup() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       // Store user profile in Firestore
       await setDoc(doc(db, 'users', userCredential.user.uid, 'profile'), { name, email });
+      console.log('Profile written:', { name, email });
+      await new Promise(res => setTimeout(res, 1000)); // 1 second delay
       navigate('/dashboard');
     }
     catch(error)
@@ -49,7 +52,7 @@ function Signup() {
       {/* Header */}
       <div className="signup-header slide-in-from-top">
         <div className="logo" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
-          <img src="/src/Official_Logo_White.png" alt="Roversa Robotics" />
+          <img src={logo} alt="Roversa Robotics" />
         </div>
         <div className="header-nav">
           <button className="nav-button fade-in-scale animate-on-mount-delay-1" onClick={() => navigate('/login')}>Login</button>

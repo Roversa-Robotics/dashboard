@@ -3,6 +3,8 @@ import { useState, useEffect } from 'react';
 import { auth } from '../Firebase.jsx';
 import { signOut } from 'firebase/auth';
 import './Dashboard.css';
+import logo from '../Official_Logo_White.png';
+import robotman from '../robotman.png';
 
 function Sidebar() {
   const navigate = useNavigate();
@@ -34,7 +36,7 @@ function Sidebar() {
   return (
     <div className="sidebar">
       <div className="logo" style={{ marginBottom: 30 }}>
-        <img src="/src/Official_Logo_White.png" alt="Roversa Robotics" />
+        <img src={logo} alt="Roversa Robotics" />
       </div>
       <nav className="nav-menu">
         <div
@@ -91,7 +93,7 @@ function Sidebar() {
         <div style={{ height: '170px' }} />
         {/* Robotman image directly after Lessons */}
         <div className="robotman-wrapper" style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-end', marginTop: 0, marginBottom: '0', height: '100px', marginLeft: 0, marginRight: 0 }}>
-          <img src="/src/robotman.png" alt="Robotman" className="robotman-img" style={{ width: '250px', height: 'auto', display: 'block', marginLeft: '-19px' }} />
+          <img src={robotman} alt="Robotman" className="robotman-img" style={{ width: '250px', height: 'auto', display: 'block', marginLeft: '-19px' }} />
         </div>
         {/* Profile and Settings above Log out */}
         <div className="nav-item" style={{ marginTop: '-50px', cursor: 'pointer', opacity: 0.5, pointerEvents: 'none' }}>

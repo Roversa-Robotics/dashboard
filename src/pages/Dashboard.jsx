@@ -140,6 +140,7 @@ function Dashboard() {
         const profileSnap = await getDoc(profileRef);
         if (profileSnap.exists()) {
           const profile = profileSnap.data();
+          console.log('Profile loaded:', profile);
           if (profile.name && profile.name.trim() !== '') {
             setUserName(profile.name);
             return;
