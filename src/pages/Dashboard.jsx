@@ -239,9 +239,9 @@ function Dashboard() {
             </div>
             {/* Access Lessons card */}
             <div className="dashboard-card fade-in-scale animate-on-mount-delay-4" onClick={() => navigate('/lessons')} style={{ flex: '1 1 320px', minWidth: 250, maxWidth: 250 }}>
-              <img src={accessguides} alt="Access Lessons" className="dashboard-card-bg" />
+              <img src={accessguides} alt="My Lessons" className="dashboard-card-bg" />
               <div className="dashboard-card-content">
-                <div className="dashboard-card-title">Access Lessons</div>
+                <div className="dashboard-card-title">My Lessons</div>
                 <div className="dashboard-card-desc">View and manage lessons</div>
               </div>
             </div>
