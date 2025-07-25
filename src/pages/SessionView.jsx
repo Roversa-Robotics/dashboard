@@ -1586,37 +1586,35 @@ function SessionView() {
   };
 
   // Save session handler
-  const handleSaveSession = () => {
+  const handleSaveSession = async () => {
     try {
       if (sessionStatus === 'active' && sessionData && sessionData.id) {
-        loadSessions(user).then(savedSessions => {
-          const updatedSession = {
-            ...sessionData,
-            name: sessionName,
-            status: sessionStatus,
-            robots: robots,
-            receivedData: receivedData,
-            completedRobots: Array.from(completedRobots),
-            lessonCompletions: Object.fromEntries(
-              Object.entries(lessonCompletions).map(([k, v]) => [k, Array.from(v)])
-            ),
-            lastUpdated: new Date().toISOString()
-          };
-          const existingIndex = savedSessions.findIndex(s => String(s.id) === String(sessionData.id));
-          if (existingIndex >= 0) {
-            savedSessions[existingIndex] = updatedSession;
-          } else {
-            savedSessions.push(updatedSession);
-          }
-          saveSessions(user, savedSessions);
-          setHasUnsavedChanges(false);
-          // Update last saved state after successful save
-          setLastSavedState({
-            robots: robots,
-            receivedData: receivedData,
-            sessionName: sessionName,
-            completedRobots: completedRobots
-          });
+        const savedSessions = await loadSessions(user);
+        const updatedSession = {
+          ...sessionData,
+          name: sessionName,
+          status: sessionStatus,
+          robots: robots,
+          receivedData: receivedData,
+          completedRobots: Array.from(completedRobots),
+          lessonCompletions: Object.fromEntries(
+            Object.entries(lessonCompletions).map(([k, v]) => [k, Array.from(v)])
+          ),
+          lastUpdated: new Date().toISOString()
+        };
+        const existingIndex = savedSessions.findIndex(s => String(s.id) === String(sessionData.id));
+        if (existingIndex >= 0) {
+          savedSessions[existingIndex] = updatedSession;
+        } else {
+          savedSessions.push(updatedSession);
+        }
+        await saveSessions(user, savedSessions);
+        setHasUnsavedChanges(false);
+        setLastSavedState({
+          robots: robots,
+          receivedData: receivedData,
+          sessionName: sessionName,
+          completedRobots: completedRobots
         });
       }
     } catch (error) {
