@@ -336,6 +336,7 @@ function SessionView() {
           setReceivedData(found.receivedData || {});
           setCompletedRobots(new Set(found.completedRobots || []));
           setLessonCompletions(found.lessonCompletions ? Object.fromEntries(Object.entries(found.lessonCompletions).map(([k, v]) => [k, new Set(v)])) : {});
+          setSessionNotes(found.sessionNotes || '');
           setIsLoadingSession(false);
         } else {
           setIsLoadingSession(false);
@@ -386,6 +387,7 @@ function SessionView() {
             lessonCompletions: Object.fromEntries(
               Object.entries(lessonCompletions).map(([k, v]) => [k, Array.from(v)])
             ),
+            sessionNotes: sessionNotes,
             lastUpdated: new Date().toISOString()
           };
           const existingIndex = savedSessions.findIndex(s => String(s.id) === String(sessionData.id));
@@ -469,6 +471,7 @@ function SessionView() {
             lessonCompletions: Object.fromEntries(
               Object.entries(lessonCompletions).map(([k, v]) => [k, Array.from(v)])
             ),
+            sessionNotes: sessionNotes,
             lastUpdated: new Date().toISOString()
           };
           const existingIndex = savedSessions.findIndex(s => String(s.id) === String(sessionData.id));
@@ -1122,6 +1125,7 @@ function SessionView() {
           lessonCompletions: Object.fromEntries(
             Object.entries(lessonCompletions).map(([k, v]) => [k, Array.from(v)])
           ),
+          sessionNotes: sessionNotes,
           lastUpdated: new Date().toISOString()
         }));
       }
@@ -1130,7 +1134,7 @@ function SessionView() {
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [sessionStatus, sessionData, sessionName, robots, receivedData, completedRobots, lessonCompletions]);
+  }, [sessionStatus, sessionData, sessionName, robots, receivedData, completedRobots, lessonCompletions, sessionNotes]);
 
   // Autosave active session to localStorage (guarded, only when mounted)
   useEffect(() => {
@@ -1154,7 +1158,8 @@ function SessionView() {
               completedRobots: Array.from(completedRobots),
               lessonCompletions: Object.fromEntries(
                 Object.entries(lessonCompletions).map(([k, v]) => [k, Array.from(v)])
-              )
+              ),
+              sessionNotes: sessionNotes
             };
             saveSessions(user, savedSessions);
           }
@@ -1174,6 +1179,7 @@ function SessionView() {
             status: sessionStatus,
             robots: robots,
             receivedData: receivedData,
+            sessionNotes: sessionNotes,
             completedRobots: Array.from(completedRobots),
             lessonCompletions: Object.fromEntries(
               Object.entries(lessonCompletions).map(([k, v]) => [k, Array.from(v)])
@@ -1612,6 +1618,7 @@ function SessionView() {
           lessonCompletions: Object.fromEntries(
             Object.entries(lessonCompletions).map(([k, v]) => [k, Array.from(v)])
           ),
+          sessionNotes: sessionNotes,
           lastUpdated: new Date().toISOString()
         };
         const existingIndex = savedSessions.findIndex(s => String(s.id) === String(sessionData.id));
@@ -2601,6 +2608,7 @@ function SessionView() {
           lessonCompletions: Object.fromEntries(
             Object.entries(lessonCompletions).map(([k, v]) => [k, Array.from(v)])
           ),
+          sessionNotes: sessionNotes,
           lastUpdated: new Date().toISOString()
         }));
       }
@@ -2609,7 +2617,7 @@ function SessionView() {
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [sessionStatus, sessionData, sessionName, robots, receivedData, completedRobots, lessonCompletions]);
+  }, [sessionStatus, sessionData, sessionName, robots, receivedData, completedRobots, lessonCompletions, sessionNotes]);
 
   useEffect(() => {
     return () => {
@@ -2819,6 +2827,11 @@ useEffect(() => {
     if (!editor) return;
     
     setSessionNotes(editor.innerHTML);
+    
+    // Auto-save notes when they change
+    if (sessionStatus === 'active' && sessionData && sessionData.id) {
+      autosaveSession();
+    }
   };
 
   // Clear formatting when typing after formatted text
