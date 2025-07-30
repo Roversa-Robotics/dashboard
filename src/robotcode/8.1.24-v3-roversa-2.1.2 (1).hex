@@ -1,23 +1,46 @@
 from microbit import *
 import music
+# import log
 import machine
+
+# radio setup
 import radio
 radio.config(group=1, length=251, power=7, queue=20, channel=0)
 radio.on()
 
 def get_serial_number(type=hex):
     NRF_FICR_BASE = 0x10000000
-    DEVICEID_INDEX = 25
+    DEVICEID_INDEX = 25 # deviceid[1]
     return type(machine.mem32[NRF_FICR_BASE + (DEVICEID_INDEX*4)]& 0xFFFFFFFF)
+
+#Continuous servo motor example:
+#https://firialabs.com/blogs/lab-notes/continuous-rotation-servos-with-python-and-the-micro-bit
+
+#servo motor values:
+# 1.0 = 100% CW
+# 1.1 = 80% CW
+#...
+# 1.5 = 0% STOPPED
+# ...
+# 1.9 = 80% CCW
+# 2.0 = 100% CCW
+
+#info on robot dims
+#wheelDia = 37
+#axleTrack = 90
+
+#global variables
 
 class cServo:
 	def __init__(self, leftServoPin=pin1, compLServo=0.0, rightServoPin=pin2, compRServo=0.0):
 		self.leftServo=leftServoPin
 		self.rightServo=rightServoPin
+		#20 ms = 50Hz RC Servo
 		self.leftServo.set_analog_period(20)
 		self.rightServo.set_analog_period(20)
 		self._compL = compLServo
 		self._compR = compRServo
+		#self.stop()
 
 	@property
 	def compL(self):
@@ -46,6 +69,7 @@ class cServo:
 
 	def forward(self):
 		global driveTime
+		#compensation is pos float number from 0 .0 to 0.5
 		self.set_ms_pulse((2.0-self.compL), (1.0+self.compR))
 		display.show(Image.ARROW_N)
 		sleep(driveTime)
@@ -63,6 +87,7 @@ class cServo:
 	def leftTurn(self):
 		global turnTime
 		self.set_ms_pulse((1.0), (1.0))
+		#self.set_ms_pulse((1.0+self.compL), (1.0+self.compR))
 		display.show(Image.ARROW_W)
 		sleep(turnTime)
 		self.stop()
@@ -71,6 +96,7 @@ class cServo:
 	def rightTurn(self):
 		global turnTime
 		self.set_ms_pulse((2.0), (2.0))
+		#self.set_ms_pulse((2.0-self.compL), (2.0-self.compR))
 		display.show(Image.ARROW_E)
 		sleep(turnTime)
 		self.stop()
