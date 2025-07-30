@@ -73,7 +73,7 @@ function BatteryBar({ voltage, cardHeight = 60 }) {
         zIndex: 1,
         textAlign: 'center'
       }}>
-        {percentText} • {voltage ? `${voltage.toFixed(2)}V` : '—'}
+        {percentText + ' Charged'}
       </div>
     </div>
   );
