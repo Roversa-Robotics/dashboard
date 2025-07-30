@@ -300,6 +300,9 @@ function SessionView() {
     // Compare session name
     if (sessionName !== lastSavedState.sessionName) return true;
     
+    // Compare session notes
+    if (sessionNotes !== (lastSavedState.sessionNotes || '')) return true;
+    
     // Compare completed robots
     const currentCompletedArray = Array.from(completedRobots);
     const savedCompletedArray = Array.from(lastSavedState.completedRobots || []);
@@ -316,7 +319,7 @@ function SessionView() {
   useEffect(() => {
     const hasChanges = hasActualChanges();
     setHasUnsavedChanges(hasChanges);
-  }, [robots, receivedData, sessionName, completedRobots]);
+  }, [robots, receivedData, sessionName, completedRobots, sessionNotes]);
 
 
   // Only load session data on first mount
@@ -338,6 +341,16 @@ function SessionView() {
           setLessonCompletions(found.lessonCompletions ? Object.fromEntries(Object.entries(found.lessonCompletions).map(([k, v]) => [k, new Set(v)])) : {});
           setSessionNotes(found.sessionNotes || '');
           setIsLoadingSession(false);
+          
+          // Initialize lastSavedState with loaded session data
+          setLastSavedState({
+            robots: found.robots || {},
+            receivedData: found.receivedData || {},
+            sessionName: found.name,
+            sessionNotes: found.sessionNotes || '',
+            completedRobots: new Set(found.completedRobots || []),
+            lessonCompletions: found.lessonCompletions ? Object.fromEntries(Object.entries(found.lessonCompletions).map(([k, v]) => [k, new Set(v)])) : {}
+          });
         } else {
           setIsLoadingSession(false);
           setSessionLoadError('Session not found.');
@@ -402,7 +415,11 @@ function SessionView() {
             robots: robots,
             receivedData: receivedData,
             sessionName: sessionName,
-            completedRobots: completedRobots
+            sessionNotes: sessionNotes,
+            completedRobots: completedRobots,
+            lessonCompletions: Object.fromEntries(
+              Object.entries(lessonCompletions).map(([k, v]) => [k, Array.from(v)])
+            )
           });
         });
       }
@@ -788,6 +805,7 @@ function SessionView() {
       status: 'paused',
       robots: robots,
       receivedData: receivedData,
+      sessionNotes: sessionNotes,
       pausedAt: new Date().toISOString()
     };
     
@@ -807,10 +825,15 @@ function SessionView() {
       setLastSavedState({
         robots: robots,
         receivedData: receivedData,
-        sessionName: sessionName
+        sessionName: sessionName,
+        sessionNotes: sessionNotes,
+        completedRobots: completedRobots,
+        lessonCompletions: Object.fromEntries(
+          Object.entries(lessonCompletions).map(([k, v]) => [k, Array.from(v)])
+        )
       });
     });
-  }, [sessionData, sessionName, robots, receivedData]);
+  }, [sessionData, sessionName, robots, receivedData, sessionNotes]);
 
   const [showEndSessionModal, setShowEndSessionModal] = useState(false);
 
@@ -838,6 +861,7 @@ function SessionView() {
       lessonCompletions: Object.fromEntries(
         Object.entries(lessonCompletions).map(([k, v]) => [k, Array.from(v)])
       ),
+      sessionNotes: sessionNotes,
       endedAt: new Date().toISOString()
     };
     loadSessions(user).then(savedSessions => {
@@ -854,7 +878,12 @@ function SessionView() {
       setLastSavedState({
         robots: robots,
         receivedData: receivedData,
-        sessionName: sessionName
+        sessionName: sessionName,
+        sessionNotes: sessionNotes,
+        completedRobots: completedRobots,
+        lessonCompletions: Object.fromEntries(
+          Object.entries(lessonCompletions).map(([k, v]) => [k, Array.from(v)])
+        )
       });
     });
   };
@@ -875,6 +904,7 @@ function SessionView() {
       lessonCompletions: Object.fromEntries(
         Object.entries(lessonCompletions).map(([k, v]) => [k, Array.from(v)])
       ),
+      sessionNotes: sessionNotes,
       resumedAt: new Date().toISOString()
     };
     
@@ -894,7 +924,12 @@ function SessionView() {
       setLastSavedState({
         robots: robots,
         receivedData: receivedData,
-        sessionName: sessionName
+        sessionName: sessionName,
+        sessionNotes: sessionNotes,
+        completedRobots: completedRobots,
+        lessonCompletions: Object.fromEntries(
+          Object.entries(lessonCompletions).map(([k, v]) => [k, Array.from(v)])
+        )
       });
     });
   };
@@ -1171,7 +1206,7 @@ function SessionView() {
   // Dedicated autosave function
   const autosaveSession = () => {
     try {
-      if (sessionStatus === 'active' && sessionData && sessionData.id) {
+      if ((sessionStatus === 'active' || sessionStatus === 'paused' || sessionStatus === 'ended') && sessionData && sessionData.id) {
         loadSessions(user).then(savedSessions => {
           const updatedSession = {
             ...sessionData,
@@ -1198,6 +1233,7 @@ function SessionView() {
             robots: robots,
             receivedData: receivedData,
             sessionName: sessionName,
+            sessionNotes: sessionNotes,
             completedRobots: completedRobots,
             lessonCompletions: Object.fromEntries(
               Object.entries(lessonCompletions).map(([k, v]) => [k, Array.from(v)])
@@ -1606,7 +1642,7 @@ function SessionView() {
   // Save session handler
   const handleSaveSession = async () => {
     try {
-      if (sessionStatus === 'active' && sessionData && sessionData.id) {
+      if ((sessionStatus === 'active' || sessionStatus === 'paused' || sessionStatus === 'ended') && sessionData && sessionData.id) {
         const savedSessions = await loadSessions(user);
         const updatedSession = {
           ...sessionData,
@@ -1621,6 +1657,7 @@ function SessionView() {
           sessionNotes: sessionNotes,
           lastUpdated: new Date().toISOString()
         };
+        
         const existingIndex = savedSessions.findIndex(s => String(s.id) === String(sessionData.id));
         if (existingIndex >= 0) {
           savedSessions[existingIndex] = updatedSession;
@@ -1628,12 +1665,17 @@ function SessionView() {
           savedSessions.push(updatedSession);
         }
         await saveSessions(user, savedSessions);
+        
         setHasUnsavedChanges(false);
         setLastSavedState({
           robots: robots,
           receivedData: receivedData,
           sessionName: sessionName,
-          completedRobots: completedRobots
+          sessionNotes: sessionNotes,
+          completedRobots: completedRobots,
+          lessonCompletions: Object.fromEntries(
+            Object.entries(lessonCompletions).map(([k, v]) => [k, Array.from(v)])
+          )
         });
       }
     } catch (error) {
@@ -2829,7 +2871,7 @@ useEffect(() => {
     setSessionNotes(editor.innerHTML);
     
     // Auto-save notes when they change
-    if (sessionStatus === 'active' && sessionData && sessionData.id) {
+    if ((sessionStatus === 'active' || sessionStatus === 'paused' || sessionStatus === 'ended') && sessionData && sessionData.id) {
       autosaveSession();
     }
   };
@@ -2886,10 +2928,19 @@ useEffect(() => {
   // Set initial content when sessionNotes changes
   useEffect(() => {
     const editor = notesTextareaRef.current;
-    if (editor && sessionNotes === '') {
-      editor.innerHTML = '';
+    if (editor) {
+      console.log('Setting innerHTML:', sessionNotes);
+      console.log('Current editor.innerHTML:', editor.innerHTML);
+      console.log('Active tab:', activeTab);
+      // Only set content if it's different from what's already in the editor
+      if (sessionNotes !== editor.innerHTML) {
+        editor.innerHTML = sessionNotes;
+        console.log('Updated editor.innerHTML to:', sessionNotes);
+      }
+    } else {
+      console.log('Editor not found, activeTab:', activeTab);
     }
-  }, [sessionNotes]);
+  }, [sessionNotes, activeTab]);
 
   return (
     <div className="dashboard-container">
@@ -2935,7 +2986,7 @@ useEffect(() => {
             </div>
             <div style={{ display: 'flex', gap: 12 }}>
               {/* Session Management Section */}
-              {sessionStatus === 'active' && (
+              {(sessionStatus === 'active' || sessionStatus === 'paused' || sessionStatus === 'ended') && (
                 <>
                   <button 
                     className="session-btn save-btn fade-in-scale animate-on-mount-delay-4"
@@ -2956,46 +3007,50 @@ useEffect(() => {
                     </svg>
                     {hasUnsavedChanges ? 'Save' : 'Saved'}
                   </button>
-                  <button 
-                    className="session-btn pause-btn fade-in-scale animate-on-mount-delay-5"
-                    onClick={pauseSession}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '18px', height: '18px' }}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" />
-                    </svg>
-                    Pause
-                  </button>
-                  <button 
-                    className="session-btn end-btn fade-in-scale animate-on-mount-delay-6"
-                    onClick={handleEndSessionClick}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '18px', height: '18px' }}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 7.5A2.25 2.25 0 0 1 7.5 5.25h9a2.25 2.25 0 0 1 2.25 2.25v9a2.25 2.25 0 0 1-2.25 2.25h-9a2.25 2.25 0 0 1-2.25-2.25v-9Z" />
-                    </svg>
-                    End
-                  </button>
-                </>
-              )}
-              {sessionStatus === 'paused' && (
-                <>
-                  <button 
-                    className="session-btn resume-btn fade-in-scale animate-on-mount-delay-4"
-                    onClick={handleResumeClick}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '18px', height: '18px' }}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347c-.75.412-1.667-.13-1.667-.986V5.653Z" />
-                    </svg>
-                    Resume
-                  </button>
-                  <button 
-                    className="session-btn end-btn fade-in-scale animate-on-mount-delay-5"
-                    onClick={handleEndSessionClick}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '18px', height: '18px' }}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 7.5A2.25 2.25 0 0 1 7.5 5.25h9a2.25 2.25 0 0 1 2.25 2.25v9a2.25 2.25 0 0 1-2.25 2.25h-9a2.25 2.25 0 0 1-2.25-2.25v-9Z" />
-                    </svg>
-                    End
-                  </button>
+                  {sessionStatus === 'active' && (
+                    <>
+                      <button 
+                        className="session-btn pause-btn fade-in-scale animate-on-mount-delay-5"
+                        onClick={pauseSession}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '18px', height: '18px' }}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" />
+                        </svg>
+                        Pause
+                      </button>
+                      <button 
+                        className="session-btn end-btn fade-in-scale animate-on-mount-delay-6"
+                        onClick={handleEndSessionClick}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '18px', height: '18px' }}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 7.5A2.25 2.25 0 0 1 7.5 5.25h9a2.25 2.25 0 0 1 2.25 2.25v9a2.25 2.25 0 0 1-2.25 2.25h-9a2.25 2.25 0 0 1-2.25-2.25v-9Z" />
+                        </svg>
+                        End
+                      </button>
+                    </>
+                  )}
+                  {sessionStatus === 'paused' && (
+                    <>
+                      <button 
+                        className="session-btn resume-btn fade-in-scale animate-on-mount-delay-5"
+                        onClick={handleResumeClick}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '18px', height: '18px' }}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347c-.75.412-1.667-.13-1.667-.986V5.653Z" />
+                        </svg>
+                        Resume
+                      </button>
+                      <button 
+                        className="session-btn end-btn fade-in-scale animate-on-mount-delay-6"
+                        onClick={handleEndSessionClick}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '18px', height: '18px' }}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 7.5A2.25 2.25 0 0 1 7.5 5.25h9a2.25 2.25 0 0 1 2.25 2.25v9a2.25 2.25 0 0 1-2.25 2.25h-9a2.25 2.25 0 0 1-2.25-2.25v-9Z" />
+                        </svg>
+                        End
+                      </button>
+                    </>
+                  )}
                 </>
               )}
               {sessionStatus === 'ended' && (
