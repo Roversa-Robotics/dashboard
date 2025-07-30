@@ -209,6 +209,18 @@ function SessionView() {
   });
   return () => unsubscribe();
   }, []);
+  // Tab state for session view
+  const [activeTab, setActiveTab] = useState('main'); // 'main' or 'notes'
+  const [sessionNotes, setSessionNotes] = useState('');
+  const [notesFormatting, setNotesFormatting] = useState({
+    bold: false,
+    italic: false,
+    underline: false,
+    color: '#000000'
+  });
+  const [hasTextSelection, setHasTextSelection] = useState(false);
+  const notesTextareaRef = useRef(null);
+
   // Remove activeTab state since we're removing tabs
 
   // Track if component is mounted
@@ -2627,6 +2639,244 @@ useEffect(() => {
   }
 }, [user]);
 
+  // Rich text formatting functions
+  const applyFormatting = (format) => {
+    const editor = notesTextareaRef.current;
+    if (!editor) return;
+
+    // Check if text is selected
+    const selection = window.getSelection();
+    if (selection.rangeCount === 0) return;
+
+    const range = selection.getRangeAt(0);
+    if (range.collapsed) return; // No text selected
+
+    // Apply formatting
+    switch (format) {
+      case 'bold':
+        document.execCommand('bold', false, null);
+        break;
+      case 'italic':
+        document.execCommand('italic', false, null);
+        break;
+      case 'underline':
+        document.execCommand('underline', false, null);
+        break;
+      default:
+        return;
+    }
+  };
+
+  const toggleFormatting = (format) => {
+    const editor = notesTextareaRef.current;
+    if (!editor) return;
+
+    // Only allow formatting if text is selected
+    const selection = window.getSelection();
+    if (!selection.rangeCount || selection.getRangeAt(0).collapsed) {
+      return; // No text selected, don't allow formatting
+    }
+
+    // Toggle the formatting state
+    setNotesFormatting(prev => ({
+      ...prev,
+      [format]: !prev[format]
+    }));
+
+    // Apply formatting to selected text
+    switch (format) {
+      case 'bold':
+        document.execCommand('bold', false, null);
+        break;
+      case 'italic':
+        document.execCommand('italic', false, null);
+        break;
+      case 'underline':
+        document.execCommand('underline', false, null);
+        break;
+      default:
+        return;
+    }
+  };
+
+  const changeTextColor = (color) => {
+    const editor = notesTextareaRef.current;
+    if (!editor) return;
+
+    // Only allow color change if text is selected
+    const selection = window.getSelection();
+    if (!selection.rangeCount || selection.getRangeAt(0).collapsed) {
+      return; // No text selected, don't allow color change
+    }
+
+    // Update the color state
+    setNotesFormatting(prev => ({
+      ...prev,
+      color: color
+    }));
+
+    // Apply color to selected text
+    document.execCommand('foreColor', false, color);
+  };
+
+  const updateFormattingState = () => {
+    const editor = notesTextareaRef.current;
+    if (!editor) return;
+
+    const selection = window.getSelection();
+    const hasSelection = selection.rangeCount > 0 && !selection.getRangeAt(0).collapsed;
+    
+    setHasTextSelection(hasSelection);
+
+    // Only update formatting state if we have a selection
+    if (hasSelection) {
+      setNotesFormatting({
+        bold: document.queryCommandState('bold'),
+        italic: document.queryCommandState('italic'),
+        underline: document.queryCommandState('underline'),
+        color: notesFormatting.color
+      });
+    }
+  };
+
+  const handleNotesChange = () => {
+    const editor = notesTextareaRef.current;
+    if (!editor) return;
+    
+    setSessionNotes(editor.innerHTML);
+  };
+
+  const handleNotesFocus = () => {
+    // Don't update formatting state on focus
+  };
+
+  const handleNotesKeyUp = () => {
+    // Don't update formatting state on keyup
+  };
+
+  const handleNotesMouseUp = () => {
+    // Check for text selection on mouse up
+    const selection = window.getSelection();
+    const hasSelection = selection && selection.toString().length > 0;
+    setHasTextSelection(hasSelection);
+    
+    // Update formatting state if we have a selection
+    if (hasSelection) {
+      setNotesFormatting({
+        bold: document.queryCommandState('bold'),
+        italic: document.queryCommandState('italic'),
+        underline: document.queryCommandState('underline'),
+        color: notesFormatting.color
+      });
+    } else {
+      // Reset formatting state when no text is selected
+      setNotesFormatting({
+        bold: false,
+        italic: false,
+        underline: false,
+        color: notesFormatting.color
+      });
+    }
+  };
+
+  const handleSelectionChange = () => {
+    // Check for text selection on any selection change
+    const selection = window.getSelection();
+    const hasSelection = selection && selection.toString().length > 0;
+    setHasTextSelection(hasSelection);
+    
+    // Update formatting state if we have a selection
+    if (hasSelection) {
+      setNotesFormatting({
+        bold: document.queryCommandState('bold'),
+        italic: document.queryCommandState('italic'),
+        underline: document.queryCommandState('underline'),
+        color: notesFormatting.color
+      });
+    } else {
+      // Reset formatting state when no text is selected
+      setNotesFormatting({
+        bold: false,
+        italic: false,
+        underline: false,
+        color: notesFormatting.color
+      });
+    }
+  };
+
+  // Add selection change listener when component mounts
+  useEffect(() => {
+    document.addEventListener('selectionchange', handleSelectionChange);
+    
+    return () => {
+      document.removeEventListener('selectionchange', handleSelectionChange);
+    };
+  }, []);
+
+  // Simple input handler without automatic formatting
+  const handleNotesInput = (e) => {
+    const editor = notesTextareaRef.current;
+    if (!editor) return;
+    
+    setSessionNotes(editor.innerHTML);
+  };
+
+  // Clear formatting when typing after formatted text
+  const handleNotesKeyDown = (e) => {
+    // Only handle single character keys (typing)
+    if (e.key.length === 1) {
+      const editor = notesTextareaRef.current;
+      if (!editor) return;
+
+      // Check if we're typing after formatted text
+      const selection = window.getSelection();
+      if (selection.rangeCount > 0) {
+        const range = selection.getRangeAt(0);
+        if (range.collapsed) { // Cursor is positioned (not selecting)
+          // Check if we're at the end of formatted text
+          const container = range.startContainer;
+          const offset = range.startOffset;
+          
+          // If we're at the end of a text node that's inside a formatting element
+          if (container.nodeType === Node.TEXT_NODE && offset === container.length) {
+            const parent = container.parentElement;
+            if (parent && (parent.tagName === 'B' || parent.tagName === 'I' || parent.tagName === 'U' || parent.style.color)) {
+              // We're at the end of formatted text, clear formatting for new text
+              document.execCommand('removeFormat', false, null);
+            }
+          }
+        }
+      }
+    }
+  };
+
+  // Apply formatting to new text as it's typed
+  const applyFormattingToNewText = () => {
+    const editor = notesTextareaRef.current;
+    if (!editor) return;
+
+    // Apply current formatting modes
+    if (notesFormatting.bold) {
+      document.execCommand('bold', false, null);
+    }
+    if (notesFormatting.italic) {
+      document.execCommand('italic', false, null);
+    }
+    if (notesFormatting.underline) {
+      document.execCommand('underline', false, null);
+    }
+    if (notesFormatting.color !== '#000000') {
+      document.execCommand('foreColor', false, notesFormatting.color);
+    }
+  };
+
+  // Set initial content when sessionNotes changes
+  useEffect(() => {
+    const editor = notesTextareaRef.current;
+    if (editor && sessionNotes === '') {
+      editor.innerHTML = '';
+    }
+  }, [sessionNotes]);
 
   return (
     <div className="dashboard-container">
@@ -2758,608 +3008,814 @@ useEffect(() => {
           </div>
         ) : (
           <div className="session-view-content">
-            {/* Connection Section */}
-            <div className="session-section fade-in-scale animate-on-mount-delay-1">
-              <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => toggleSection('connection')}>
-                <h2>Connection</h2>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleSection('connection');
-                  }}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: '4px',
-                    borderRadius: '4px',
-                    transition: 'background-color 0.2s',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    outline: 'none'
-                  }}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = '#f0f0f0'}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                >
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    strokeWidth={1.5} 
-                    stroke="currentColor" 
-                    style={{ 
-                      width: '20px', 
-                      height: '20px',
-                      transform: minimizedSections.connection ? 'rotate(180deg)' : 'rotate(0deg)',
-                      transition: 'transform 0.2s'
-                    }}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                  </svg>
-                </button>
-              </div>
-              {!minimizedSections.connection && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                  <button 
-                    className={`connection-btn ${isConnected ? 'disconnect' : 'connect'} fade-in-scale animate-on-mount-delay-2`}
-                    onClick={isConnected ? disconnectFromMicrobit : connectToMicrobit}
-                    disabled={sessionStatus === 'ended' || sessionStatus === 'paused'}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '18px', height: '18px' }}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8.288 15.038a5.25 5.25 0 0 1 7.424 0M5.106 11.856c3.807-3.808 9.98-3.808 13.788 0M1.924 8.674c5.565-5.565 14.587-5.565 20.152 0M12.53 18.22l-.53.53-.53-.53a.75.75 0 0 1 1.06 0Z" />
-                    </svg>
-                    {isConnected ? 'Disconnect' : 'Connect'}
-                  </button>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div 
-                      className={`status-dot ${isConnected ? 'connected' : ''} animate-on-mount-delay-3`}
-                      style={{
-                        width: '12px',
-                        height: '12px',
-                        borderRadius: '50%',
-                        backgroundColor: isConnected ? '#4CAF50' : '#b0b0b0',
-                        transition: 'background-color 0.3s ease'
+            {/* Tab Interface */}
+            <div className="session-tabs fade-in-scale animate-on-mount-delay-1" style={{ 
+              display: 'flex', 
+              borderBottom: '2px solid #f0f0f0', 
+              marginBottom: '24px',
+              gap: '0'
+            }}>
+              <button
+                onClick={() => setActiveTab('main')}
+                style={{
+                  flex: 1,
+                  padding: '12px 24px',
+                  border: 'none',
+                  background: activeTab === 'main' ? '#4169e1' : 'transparent',
+                  color: activeTab === 'main' ? 'white' : '#666',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  borderRadius: '8px 8px 0 0',
+                  transition: 'all 0.2s ease',
+                  borderBottom: activeTab === 'main' ? '2px solid #4169e1' : '2px solid transparent'
+                }}
+              >
+                Main Session
+              </button>
+              <button
+                onClick={() => setActiveTab('notes')}
+                style={{
+                  flex: 1,
+                  padding: '12px 24px',
+                  border: 'none',
+                  background: activeTab === 'notes' ? '#4169e1' : 'transparent',
+                  color: activeTab === 'notes' ? 'white' : '#666',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  borderRadius: '8px 8px 0 0',
+                  transition: 'all 0.2s ease',
+                  borderBottom: activeTab === 'notes' ? '2px solid #4169e1' : '2px solid transparent'
+                }}
+              >
+                Notes
+              </button>
+            </div>
+
+            {/* Tab Content */}
+            {activeTab === 'main' && (
+              <div className="tab-content fade-in-scale animate-on-mount-delay-2">
+                {/* Connection Section */}
+                <div className="session-section fade-in-scale animate-on-mount-delay-1">
+                  <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => toggleSection('connection')}>
+                    <h2>Connection</h2>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleSection('connection');
                       }}
-                    ></div>
-                    <span style={{ color: '#666', fontSize: '14px' }}>
-                      {isConnected ? 'Connected to micro:bit' : 'Not connected'}
-                    </span>
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        borderRadius: '4px',
+                        transition: 'background-color 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        outline: 'none'
+                      }}
+                      onMouseEnter={(e) => e.target.style.backgroundColor = '#f0f0f0'}
+                      onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                    >
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        fill="none" 
+                        viewBox="0 0 24 24" 
+                        strokeWidth={1.5} 
+                        stroke="currentColor" 
+                        style={{ 
+                          width: '20px', 
+                          height: '20px',
+                          transform: minimizedSections.connection ? 'rotate(180deg)' : 'rotate(0deg)',
+                          transition: 'transform 0.2s'
+                        }}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                      </svg>
+                    </button>
                   </div>
-                </div>
-              )}
-            </div>
-
-            {/* Lesson Progress Section */}
-            <div className="session-section fade-in-scale animate-on-mount-delay-2">
-              <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => toggleSection('lessonProgress')}>
-                <h2>Lesson Progress</h2>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleSection('lessonProgress');
-                  }}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: '4px',
-                    borderRadius: '4px',
-                    transition: 'background-color 0.2s',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    outline: 'none'
-                  }}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = '#f0f0f0'}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                >
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    strokeWidth={1.5} 
-                    stroke="currentColor" 
-                    style={{ 
-                      width: '20px', 
-                      height: '20px',
-                      transform: minimizedSections.lessonProgress ? 'rotate(180deg)' : 'rotate(0deg)',
-                      transition: 'transform 0.2s'
-                    }}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                  </svg>
-                </button>
-              </div>
-              {!minimizedSections.lessonProgress && (
-                <>
-                  {/* Lesson selection dropdown and Lesson History button in one row */}
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, gap: 16 }}>
-                    <div>
-                      <label htmlFor="lesson-select" style={{ fontWeight: 600, marginRight: 12 }}>Select Lesson:</label>
-                      <select
-                        id="lesson-select"
-                        value={selectedLessonId}
-                        onChange={e => {
-                          setSelectedLessonId(e.target.value);
-                          setActiveLessonTab(e.target.value);
-                        }}
-                        style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid #e0e0e0', fontSize: 14, fontFamily: 'Space Mono, monospace' }}
+                  {!minimizedSections.connection && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                      <button 
+                        className={`connection-btn ${isConnected ? 'disconnect' : 'connect'} fade-in-scale animate-on-mount-delay-2`}
+                        onClick={isConnected ? disconnectFromMicrobit : connectToMicrobit}
+                        disabled={sessionStatus === 'ended' || sessionStatus === 'paused'}
                       >
-                        {lessons.map(lesson => (
-                          <option key={lesson.id} value={lesson.id} style={{ fontFamily: 'Space Mono, monospace' }}>{lesson.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                      <button
-                        style={{
-                          padding: '8px 18px',
-                          borderRadius: 8,
-                          background: '#4169e1',
-                          color: '#fff',
-                          fontWeight: 600,
-                          fontSize: 15,
-                          border: 'none',
-                          boxShadow: '0 2px 8px rgba(65, 105, 225, 0.10)',
-                          cursor: 'pointer',
-                          marginBottom: 0
-                        }}
-                        onClick={() => setShowLessonHistoryModal(true)}
-                      >
-                        Lesson History
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '18px', height: '18px' }}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M8.288 15.038a5.25 5.25 0 0 1 7.424 0M5.106 11.856c3.807-3.808 9.98-3.808 13.788 0M1.924 8.674c5.565-5.565 14.587-5.565 20.152 0M12.53 18.22l-.53.53-.53-.53a.75.75 0 0 1 1.06 0Z" />
+                        </svg>
+                        {isConnected ? 'Disconnect' : 'Connect'}
                       </button>
-                      <button
-                        style={{
-                          padding: '8px 12px',
-                          borderRadius: 8,
-                          background: selectedLessonId === 'none' || !LESSON_LINKS[selectedLessonId] ? '#e0e0e0' : '#f7f7f7',
-                          color: selectedLessonId === 'none' || !LESSON_LINKS[selectedLessonId] ? '#b0b0b0' : '#444',
-                          fontWeight: 600,
-                          fontSize: 15,
-                          border: '1.5px solid #d0d0d0',
-                          boxShadow: '0 2px 8px rgba(65, 105, 225, 0.04)',
-                          cursor: selectedLessonId === 'none' || !LESSON_LINKS[selectedLessonId] ? 'not-allowed' : 'pointer',
-                          marginBottom: 0,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 6,
-                          transition: 'background 0.2s, color 0.2s, border 0.2s',
-                        }}
-                        disabled={selectedLessonId === 'none' || !LESSON_LINKS[selectedLessonId]}
-                        title={selectedLessonId === 'none' || !LESSON_LINKS[selectedLessonId] ? 'Select a lesson with a link to pop out' : 'Open lesson link in new window'}
-                        onMouseEnter={e => {
-                          if (!(selectedLessonId === 'none' || !LESSON_LINKS[selectedLessonId])) {
-                            e.target.style.background = '#ededed';
-                            e.target.style.color = '#222';
-                            e.target.style.borderColor = '#b0b0b0';
-                          }
-                        }}
-                        onMouseLeave={e => {
-                          if (!(selectedLessonId === 'none' || !LESSON_LINKS[selectedLessonId])) {
-                            e.target.style.background = '#f7f7f7';
-                            e.target.style.color = '#444';
-                            e.target.style.borderColor = '#d0d0d0';
-                          }
-                        }}
-                        onClick={() => {
-                          if (selectedLessonId === 'none' || !LESSON_LINKS[selectedLessonId]) return;
-                          window.open(
-                            LESSON_LINKS[selectedLessonId],
-                            '_blank',
-                            'toolbar=yes,scrollbars=yes,resizable=yes,top=0,left=0,width=' + window.screen.width + ',height=' + window.screen.height
-                          );
-                        }}
-                      >
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 4, background: selectedLessonId === 'none' || !LESSON_LINKS[selectedLessonId] ? '#e0e0e0' : '#f7f7f7', borderRadius: 6, padding: '0 2px', transition: 'background 0.2s, color 0.2s, border 0.2s' }}>
-                          Pop out
-                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '20px', height: '20px', marginLeft: 4 }}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
-                          </svg>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div 
+                          className={`status-dot ${isConnected ? 'connected' : ''} animate-on-mount-delay-3`}
+                          style={{
+                            width: '12px',
+                            height: '12px',
+                            borderRadius: '50%',
+                            backgroundColor: isConnected ? '#4CAF50' : '#b0b0b0',
+                            transition: 'background-color 0.3s ease'
+                          }}
+                        ></div>
+                        <span style={{ color: '#666', fontSize: '14px' }}>
+                          {isConnected ? 'Connected to micro:bit' : 'Not connected'}
                         </span>
-                      </button>
-                    </div>
-                  </div>
-                  {/* Progress bar for selected lesson */}
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '20px',
-                    padding: '20px 0'
-                  }}>
-                    <div style={{ 
-                      flex: 1,
-                      height: '32px',
-                      background: '#f8f9fa',
-                      borderRadius: '16px',
-                      overflow: 'hidden',
-                      position: 'relative',
-                      border: '2px solid #e0e0e0'
-                    }}>
-                      <div style={{
-                        height: '100%',
-                        background: 'linear-gradient(90deg, #4169e1 0%, #274bb5 100%)',
-                        borderRadius: '14px',
-                        width: `${Object.keys(robots).length > 0 ? ((lessonCompletions[selectedLessonId]?.size || 0) / Object.keys(robots).length) * 100 : 0}%`,
-                        transition: 'width 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
-                        position: 'absolute',
-                        left: 0,
-                        top: 0,
-                        boxShadow: '0 2px 8px rgba(65, 105, 225, 0.2)'
-                      }} />
-                    </div>
-                    <div style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '12px',
-                      fontSize: '16px',
-                      fontWeight: '600'
-                    }}>
-                      <span style={{ color: '#4169e1' }}>
-                        {lessonCompletions[selectedLessonId]?.size || 0}
-                      </span>
-                      <span style={{ color: '#666' }}>/</span>
-                      <span style={{ color: '#222' }}>
-                        {Object.keys(robots).length}
-                      </span>
-                      <span style={{ color: '#666', fontSize: '14px' }}>
-                        ({Object.keys(robots).length > 0 ? Math.round(((lessonCompletions[selectedLessonId]?.size || 0) / Object.keys(robots).length) * 100) : 0}%)
-                      </span>
-                    </div>
-                  </div>
-                  {/* Progress key below bar, left-aligned */}
-                  <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginTop: '8px', marginLeft: '2px', fontSize: '14px', color: '#666' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#4169e1' }}></div>
-                      <span>Completed</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#e0e0e0' }}></div>
-                      <span>In Progress</span>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Robots Section */}
-            <div className="session-section fade-in-scale animate-on-mount-delay-3" 
-              style={{ minWidth: 0, height: minimizedSections.robotsAndPrograms ? 'auto' : '600px', overflow: 'hidden' }}
-            >
-              <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => toggleSection('robotsAndPrograms')}>
-                <h2>Robots</h2>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleSection('robotsAndPrograms');
-                  }}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: '4px',
-                    borderRadius: '4px',
-                    transition: 'background-color 0.2s',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    outline: 'none'
-                  }}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = '#f0f0f0'}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                >
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    strokeWidth={1.5} 
-                    stroke="currentColor" 
-                    style={{ 
-                      width: '20px', 
-                      height: '20px',
-                      transform: minimizedSections.robotsAndPrograms ? 'rotate(180deg)' : 'rotate(0deg)',
-                      transition: 'transform 0.2s'
-                    }}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                  </svg>
-                </button>
-              </div>
-              
-              {!minimizedSections.robotsAndPrograms && (
-                <>
-                  {/* Single column layout for Robots */}
-                  <div style={{ 
-                    minWidth: 0,
-                    height: 'calc(100% - 60px)', // Subtract header height
-                    overflow: 'hidden'
-                  }}>
-                    {/* Robots Section */}
-                    <div style={{ minWidth: 0, height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                      <div style={{ marginBottom: '20px', flexShrink: 0 }}>
-                        <h3 style={{ 
-                          fontSize: '1.1rem', 
-                          fontWeight: '600', 
-                          color: '#222',
-                          marginBottom: '0px'
-                        }}>
-                          Robots ({(() => {
-                            const filteredRobots = getFilteredRobots();
-                            const totalCount = Object.keys(robots).length;
-                            const filteredCount = Object.keys(filteredRobots).length;
-                            return robotSearchTerm.trim() ? `${filteredCount} of ${totalCount}` : totalCount;
-                          })()})
-                        </h3>
                       </div>
-                      {/* Search bar and bulk action buttons positioned under the header */}
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px', padding: '12px 0', flexShrink: 0 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    </div>
+                  )}
+                </div>
+
+                {/* Lesson Progress Section */}
+                <div className="session-section fade-in-scale animate-on-mount-delay-2">
+                  <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => toggleSection('lessonProgress')}>
+                    <h2>Lesson Progress</h2>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleSection('lessonProgress');
+                      }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        borderRadius: '4px',
+                        transition: 'background-color 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        outline: 'none'
+                      }}
+                      onMouseEnter={(e) => e.target.style.backgroundColor = '#f0f0f0'}
+                      onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                    >
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        fill="none" 
+                        viewBox="0 0 24 24" 
+                        strokeWidth={1.5} 
+                        stroke="currentColor" 
+                        style={{ 
+                          width: '20px', 
+                          height: '20px',
+                          transform: minimizedSections.lessonProgress ? 'rotate(180deg)' : 'rotate(0deg)',
+                          transition: 'transform 0.2s'
+                        }}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                      </svg>
+                    </button>
+                  </div>
+                  {!minimizedSections.lessonProgress && (
+                    <>
+                      {/* Lesson selection dropdown and Lesson History button in one row */}
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, gap: 16 }}>
+                        <div>
+                          <label htmlFor="lesson-select" style={{ fontWeight: 600, marginRight: 12 }}>Select Lesson:</label>
+                          <select
+                            id="lesson-select"
+                            value={selectedLessonId}
+                            onChange={e => {
+                              setSelectedLessonId(e.target.value);
+                              setActiveLessonTab(e.target.value);
+                            }}
+                            style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid #e0e0e0', fontSize: 14, fontFamily: 'Space Mono, monospace' }}
+                          >
+                            {lessons.map(lesson => (
+                              <option key={lesson.id} value={lesson.id} style={{ fontFamily: 'Space Mono, monospace' }}>{lesson.name}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <button
+                            style={{
+                              padding: '8px 18px',
+                              borderRadius: 8,
+                              background: '#4169e1',
+                              color: '#fff',
+                              fontWeight: 600,
+                              fontSize: 15,
+                              border: 'none',
+                              boxShadow: '0 2px 8px rgba(65, 105, 225, 0.10)',
+                              cursor: 'pointer',
+                              marginBottom: 0
+                            }}
+                            onClick={() => setShowLessonHistoryModal(true)}
+                          >
+                            Lesson History
+                          </button>
+                          <button
+                            style={{
+                              padding: '8px 12px',
+                              borderRadius: 8,
+                              background: selectedLessonId === 'none' || !LESSON_LINKS[selectedLessonId] ? '#e0e0e0' : '#f7f7f7',
+                              color: selectedLessonId === 'none' || !LESSON_LINKS[selectedLessonId] ? '#b0b0b0' : '#444',
+                              fontWeight: 600,
+                              fontSize: 15,
+                              border: '1.5px solid #d0d0d0',
+                              boxShadow: '0 2px 8px rgba(65, 105, 225, 0.04)',
+                              cursor: selectedLessonId === 'none' || !LESSON_LINKS[selectedLessonId] ? 'not-allowed' : 'pointer',
+                              marginBottom: 0,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 6,
+                              transition: 'background 0.2s, color 0.2s, border 0.2s',
+                            }}
+                            disabled={selectedLessonId === 'none' || !LESSON_LINKS[selectedLessonId]}
+                            title={selectedLessonId === 'none' || !LESSON_LINKS[selectedLessonId] ? 'Select a lesson with a link to pop out' : 'Open lesson link in new window'}
+                            onMouseEnter={e => {
+                              if (!(selectedLessonId === 'none' || !LESSON_LINKS[selectedLessonId])) {
+                                e.target.style.background = '#ededed';
+                                e.target.style.color = '#222';
+                                e.target.style.borderColor = '#b0b0b0';
+                              }
+                            }}
+                            onMouseLeave={e => {
+                              if (!(selectedLessonId === 'none' || !LESSON_LINKS[selectedLessonId])) {
+                                e.target.style.background = '#f7f7f7';
+                                e.target.style.color = '#444';
+                                e.target.style.borderColor = '#d0d0d0';
+                              }
+                            }}
+                            onClick={() => {
+                              if (selectedLessonId === 'none' || !LESSON_LINKS[selectedLessonId]) return;
+                              window.open(
+                                LESSON_LINKS[selectedLessonId],
+                                '_blank',
+                                'toolbar=yes,scrollbars=yes,resizable=yes,top=0,left=0,width=' + window.screen.width + ',height=' + window.screen.height
+                              );
+                            }}
+                          >
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 4, background: selectedLessonId === 'none' || !LESSON_LINKS[selectedLessonId] ? '#e0e0e0' : '#f7f7f7', borderRadius: 6, padding: '0 2px', transition: 'background 0.2s, color 0.2s, border 0.2s' }}>
+                              Pop out
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '20px', height: '20px', marginLeft: 4 }}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
+                              </svg>
+                            </span>
+                          </button>
+                        </div>
+                      </div>
+                      {/* Progress bar for selected lesson */}
+                      <div style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '20px',
+                        padding: '20px 0'
+                      }}>
+                        <div style={{ 
+                          flex: 1,
+                          height: '32px',
+                          background: '#f8f9fa',
+                          borderRadius: '16px',
+                          overflow: 'hidden',
+                          position: 'relative',
+                          border: '2px solid #e0e0e0'
+                        }}>
+                          <div style={{
+                            height: '100%',
+                            background: 'linear-gradient(90deg, #4169e1 0%, #274bb5 100%)',
+                            borderRadius: '14px',
+                            width: `${Object.keys(robots).length > 0 ? ((lessonCompletions[selectedLessonId]?.size || 0) / Object.keys(robots).length) * 100 : 0}%`,
+                            transition: 'width 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+                            position: 'absolute',
+                            left: 0,
+                            top: 0,
+                            boxShadow: '0 2px 8px rgba(65, 105, 225, 0.2)'
+                          }} />
+                        </div>
+                        <div style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: '12px',
+                          fontSize: '16px',
+                          fontWeight: '600'
+                        }}>
+                          <span style={{ color: '#4169e1' }}>
+                            {lessonCompletions[selectedLessonId]?.size || 0}
+                          </span>
+                          <span style={{ color: '#666' }}>/</span>
+                          <span style={{ color: '#222' }}>
+                            {Object.keys(robots).length}
+                          </span>
+                          <span style={{ color: '#666', fontSize: '14px' }}>
+                            ({Object.keys(robots).length > 0 ? Math.round(((lessonCompletions[selectedLessonId]?.size || 0) / Object.keys(robots).length) * 100) : 0}%)
+                          </span>
+                        </div>
+                      </div>
+                      {/* Progress key below bar, left-aligned */}
+                      <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginTop: '8px', marginLeft: '2px', fontSize: '14px', color: '#666' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#4169e1' }}></div>
+                          <span>Completed</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#e0e0e0' }}></div>
+                          <span>In Progress</span>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Robots Section */}
+                <div className="session-section fade-in-scale animate-on-mount-delay-3" 
+                  style={{ minWidth: 0, height: minimizedSections.robotsAndPrograms ? 'auto' : '600px', overflow: 'hidden' }}
+                >
+                  <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => toggleSection('robotsAndPrograms')}>
+                    <h2>Robots</h2>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleSection('robotsAndPrograms');
+                      }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        borderRadius: '4px',
+                        transition: 'background-color 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        outline: 'none'
+                      }}
+                      onMouseEnter={(e) => e.target.style.backgroundColor = '#f0f0f0'}
+                      onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                    >
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        fill="none" 
+                        viewBox="0 0 24 24" 
+                        strokeWidth={1.5} 
+                        stroke="currentColor" 
+                        style={{ 
+                          width: '20px', 
+                          height: '20px',
+                          transform: minimizedSections.robotsAndPrograms ? 'rotate(180deg)' : 'rotate(0deg)',
+                          transition: 'transform 0.2s'
+                        }}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                      </svg>
+                    </button>
+                  </div>
+                  
+                  {!minimizedSections.robotsAndPrograms && (
+                    <>
+                      {/* Single column layout for Robots */}
+                      <div style={{ 
+                        minWidth: 0,
+                        height: 'calc(100% - 60px)', // Subtract header height
+                        overflow: 'hidden'
+                      }}>
+                        {/* Robots Section */}
+                        <div style={{ minWidth: 0, height: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                          <div style={{ marginBottom: '20px', flexShrink: 0 }}>
+                            <h3 style={{ 
+                              fontSize: '1.1rem', 
+                              fontWeight: '600', 
+                              color: '#222',
+                              marginBottom: '0px'
+                            }}>
+                              Robots ({(() => {
+                                const filteredRobots = getFilteredRobots();
+                                const totalCount = Object.keys(robots).length;
+                                const filteredCount = Object.keys(filteredRobots).length;
+                                return robotSearchTerm.trim() ? `${filteredCount} of ${totalCount}` : totalCount;
+                              })()})
+                            </h3>
+                          </div>
+                          {/* Search bar and bulk action buttons positioned under the header */}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px', padding: '12px 0', flexShrink: 0 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '16px', height: '16px', color: '#666' }}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                              </svg>
+                              <input
+                                type="text"
+                                placeholder="Search robots by ID or tags..."
+                                value={robotSearchTerm}
+                                onChange={(e) => setRobotSearchTerm(e.target.value)}
+                                style={{
+                                  padding: '8px 12px',
+                                  border: '1px solid #e0e0e0',
+                                  borderRadius: '6px',
+                                  fontSize: '14px',
+                                  width: '290px',
+                                  outline: 'none',
+                                  transition: 'border-color 0.2s'
+                                }}
+                                onFocus={(e) => e.target.style.borderColor = '#4169e1'}
+                                onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
+                              />
+                              {Object.keys(robots).length > 0 && (
+                                <button 
+                                  className="clear-data-btn fade-in-scale animate-on-mount-delay-7" 
+                                  onClick={clearRobots}
+                                  style={{
+                                    padding: '8px 12px',
+                                    height: '36px',
+                                    fontSize: '14px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                  }}
+                                >
+                                  Clear Robots
+                                </button>
+                              )}
+                              {(() => {
+                                const filteredRobots = getFilteredRobots();
+                                const filteredDeviceIds = Object.keys(filteredRobots);
+                                return filteredDeviceIds.length > 0 && (
+                                  <button
+                                    className="clear-data-btn fade-in-scale animate-on-mount-delay-6"
+                                    onClick={() => {
+                                      const allSelected = filteredDeviceIds.length > 0 && filteredDeviceIds.every(id => selectedRobotsForTagging.has(id));
+                                      if (allSelected) {
+                                        setSelectedRobotsForTagging(new Set());
+                                      } else {
+                                        setSelectedRobotsForTagging(new Set(filteredDeviceIds));
+                                      }
+                                    }}
+                                    style={{
+                                      padding: '8px 12px',
+                                      height: '36px',
+                                      fontSize: '14px',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center'
+                                    }}
+                                  >
+                                    {(() => {
+                                      const allSelected = filteredDeviceIds.length > 0 && filteredDeviceIds.every(id => selectedRobotsForTagging.has(id));
+                                      return allSelected ? 'Deselect All' : 'Select All';
+                                    })()}
+                                  </button>
+                                );
+                              })()}
+                            </div>
+                            {selectedRobotsForTagging.size > 0 && (
+                              <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
+                                <button
+                                  className="fade-in-scale animate-on-mount-delay-4"
+                                  style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    fontSize: '14px',
+                                    padding: '8px 12px',
+                                    height: '36px',
+                                    background: '#dc3545',
+                                    color: '#fff',
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    boxShadow: '0 2px 8px rgba(220, 53, 69, 0.15)',
+                                    cursor: 'pointer',
+                                    transition: 'background 0.2s'
+                                  }}
+                                  onClick={() => {
+                                    if (!window.confirm(`Are you sure you want to delete the selected robot${selectedRobotsForTagging.size > 1 ? 's' : ''}? This cannot be undone.`)) return;
+                                    const updatedRobots = { ...robots };
+                                    selectedRobotsForTagging.forEach(deviceId => {
+                                      delete updatedRobots[deviceId];
+                                    });
+                                    setRobots(updatedRobots);
+                                    setSelectedRobotsForTagging(new Set());
+                                  }}
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '14px', height: '14px' }}>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                                  </svg>
+                                  Delete Selected
+                                </button>
+                                {selectedLessonId !== 'none' && (
+                                  <button
+                                    className="fade-in-scale animate-on-mount-delay-5"
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '6px',
+                                      fontSize: '14px',
+                                      padding: '8px 12px',
+                                      height: '36px',
+                                      background: '#4169e1',
+                                      color: '#fff',
+                                      border: 'none',
+                                      borderRadius: '6px',
+                                      boxShadow: '0 2px 8px rgba(65, 105, 225, 0.15)',
+                                      cursor: 'pointer',
+                                      transition: 'background 0.2s'
+                                    }}
+                                    onClick={() => {
+                                      setCompletedRobots(prev => {
+                                        const newSet = new Set(prev);
+                                        const allSelectedDone = Array.from(selectedRobotsForTagging).every(id => completedRobots.has(id));
+                                        if (allSelectedDone) {
+                                          selectedRobotsForTagging.forEach(id => newSet.delete(id));
+                                        } else {
+                                          selectedRobotsForTagging.forEach(id => newSet.add(id));
+                                        }
+                                        return newSet;
+                                      });
+                                    }}
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '14px', height: '14px' }}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                    </svg>
+                                    {allSelectedDone ? 'Undo Done' : 'Mark as Done'}
+                                  </button>
+                                )}
+                                {selectedClassroom && (
+                                  <button 
+                                    className="fade-in-scale animate-on-mount-delay-5"
+                                    onClick={openTagModal}
+                                    style={{
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      gap: '6px',
+                                      fontSize: '14px',
+                                      padding: '8px 12px',
+                                      height: '36px',
+                                      background: '#a259e1',
+                                      color: '#fff',
+                                      border: 'none',
+                                      borderRadius: '6px',
+                                      boxShadow: '0 2px 8px rgba(162, 89, 225, 0.15)',
+                                      cursor: 'pointer',
+                                      transition: 'background 0.2s'
+                                    }}
+                                  >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '14px', height: '14px' }}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.732.699 2.431 0l4.318-4.318c.699-.699.699-1.732 0-2.431L9.568 3Z" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6Z" />
+                                    </svg>
+                                    Assign
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div style={{ flex: 1, overflow: 'auto' }}>
+                            {!selectedRobot && robotCardsView}
+                            {robotDataView}
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Cumulative Data Section */}
+                <div className="session-section fade-in-scale animate-on-mount-delay-4">
+                  <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => toggleSection('dataReceived')}>
+                    <h2>Logs ({receivedData.length})</h2>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleSection('dataReceived');
+                      }}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        borderRadius: '4px',
+                        transition: 'background-color 0.2s',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        outline: 'none'
+                      }}
+                      onMouseEnter={(e) => e.target.style.backgroundColor = '#f0f0f0'}
+                      onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
+                    >
+                      <svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        fill="none" 
+                        viewBox="0 0 24 24" 
+                        strokeWidth={1.5} 
+                        stroke="currentColor" 
+                        style={{ 
+                          width: '20px', 
+                          height: '20px',
+                          transform: minimizedSections.dataReceived ? 'rotate(180deg)' : 'rotate(0deg)',
+                          transition: 'transform 0.2s'
+                        }}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                      </svg>
+                    </button>
+                  </div>
+                  {!minimizedSections.dataReceived && (
+                    <>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', marginBottom: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '16px', height: '16px', color: '#666' }}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
                           </svg>
                           <input
                             type="text"
-                            placeholder="Search robots by ID or tags..."
-                            value={robotSearchTerm}
-                            onChange={(e) => setRobotSearchTerm(e.target.value)}
+                            placeholder="Search logs..."
+                            value={dataLogSearchTerm}
+                            onChange={e => setDataLogSearchTerm(e.target.value)}
                             style={{
                               padding: '8px 12px',
                               border: '1px solid #e0e0e0',
                               borderRadius: '6px',
                               fontSize: '14px',
-                              width: '290px',
+                              width: '300px',
                               outline: 'none',
                               transition: 'border-color 0.2s'
                             }}
-                            onFocus={(e) => e.target.style.borderColor = '#4169e1'}
-                            onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
+                            onFocus={e => e.target.style.borderColor = '#4169e1'}
+                            onBlur={e => e.target.style.borderColor = '#e0e0e0'}
                           />
-                          {Object.keys(robots).length > 0 && (
-                            <button 
-                              className="clear-data-btn fade-in-scale animate-on-mount-delay-7" 
-                              onClick={clearRobots}
-                              style={{
-                                padding: '8px 12px',
-                                height: '36px',
-                                fontSize: '14px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                              }}
-                            >
-                              Clear Robots
-                            </button>
-                          )}
-                          {(() => {
-                            const filteredRobots = getFilteredRobots();
-                            const filteredDeviceIds = Object.keys(filteredRobots);
-                            return filteredDeviceIds.length > 0 && (
-                              <button
-                                className="clear-data-btn fade-in-scale animate-on-mount-delay-6"
-                                onClick={() => {
-                                  const allSelected = filteredDeviceIds.length > 0 && filteredDeviceIds.every(id => selectedRobotsForTagging.has(id));
-                                  if (allSelected) {
-                                    setSelectedRobotsForTagging(new Set());
-                                  } else {
-                                    setSelectedRobotsForTagging(new Set(filteredDeviceIds));
-                                  }
-                                }}
-                                style={{
-                                  padding: '8px 12px',
-                                  height: '36px',
-                                  fontSize: '14px',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center'
-                                }}
-                              >
-                                {(() => {
-                                  const allSelected = filteredDeviceIds.length > 0 && filteredDeviceIds.every(id => selectedRobotsForTagging.has(id));
-                                  return allSelected ? 'Deselect All' : 'Select All';
-                                })()}
-                              </button>
-                            );
-                          })()}
                         </div>
-                        {selectedRobotsForTagging.size > 0 && (
-                          <div style={{ display: 'flex', gap: '12px', marginTop: '8px' }}>
-                            <button
-                              className="fade-in-scale animate-on-mount-delay-4"
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '6px',
-                                fontSize: '14px',
-                                padding: '8px 12px',
-                                height: '36px',
-                                background: '#dc3545',
-                                color: '#fff',
-                                border: 'none',
-                                borderRadius: '6px',
-                                boxShadow: '0 2px 8px rgba(220, 53, 69, 0.15)',
-                                cursor: 'pointer',
-                                transition: 'background 0.2s'
-                              }}
-                              onClick={() => {
-                                if (!window.confirm(`Are you sure you want to delete the selected robot${selectedRobotsForTagging.size > 1 ? 's' : ''}? This cannot be undone.`)) return;
-                                const updatedRobots = { ...robots };
-                                selectedRobotsForTagging.forEach(deviceId => {
-                                  delete updatedRobots[deviceId];
-                                });
-                                setRobots(updatedRobots);
-                                setSelectedRobotsForTagging(new Set());
-                              }}
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '14px', height: '14px' }}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                              </svg>
-                              Delete Selected
-                            </button>
-                            {selectedLessonId !== 'none' && (
-                              <button
-                                className="fade-in-scale animate-on-mount-delay-5"
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '6px',
-                                  fontSize: '14px',
-                                  padding: '8px 12px',
-                                  height: '36px',
-                                  background: '#4169e1',
-                                  color: '#fff',
-                                  border: 'none',
-                                  borderRadius: '6px',
-                                  boxShadow: '0 2px 8px rgba(65, 105, 225, 0.15)',
-                                  cursor: 'pointer',
-                                  transition: 'background 0.2s'
-                                }}
-                                onClick={() => {
-                                  setCompletedRobots(prev => {
-                                    const newSet = new Set(prev);
-                                    const allSelectedDone = Array.from(selectedRobotsForTagging).every(id => completedRobots.has(id));
-                                    if (allSelectedDone) {
-                                      selectedRobotsForTagging.forEach(id => newSet.delete(id));
-                                    } else {
-                                      selectedRobotsForTagging.forEach(id => newSet.add(id));
-                                    }
-                                    return newSet;
-                                  });
-                                }}
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '14px', height: '14px' }}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                                </svg>
-                                {allSelectedDone ? 'Undo Done' : 'Mark as Done'}
-                              </button>
-                            )}
-                            {selectedClassroom && (
-                              <button 
-                                className="fade-in-scale animate-on-mount-delay-5"
-                                onClick={openTagModal}
-                                style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '6px',
-                                  fontSize: '14px',
-                                  padding: '8px 12px',
-                                  height: '36px',
-                                  background: '#a259e1',
-                                  color: '#fff',
-                                  border: 'none',
-                                  borderRadius: '6px',
-                                  boxShadow: '0 2px 8px rgba(162, 89, 225, 0.15)',
-                                  cursor: 'pointer',
-                                  transition: 'background 0.2s'
-                                }}
-                              >
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '14px', height: '14px' }}>
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.732.699 2.431 0l4.318-4.318c.699-.699.699-1.732 0-2.431L9.568 3Z" />
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6Z" />
-                                </svg>
-                                Assign
-                              </button>
-                            )}
-                          </div>
+                        {receivedData.length > 0 && (
+                          <button 
+                            className="clear-data-btn fade-in-scale animate-on-mount-delay-5" 
+                            onClick={clearData}
+                            style={{
+                              padding: '8px 12px',
+                              height: '36px',
+                              fontSize: '14px',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}
+                          >
+                            Clear Data
+                          </button>
                         )}
                       </div>
-                      
-                      <div style={{ flex: 1, overflow: 'auto' }}>
-                        {!selectedRobot && robotCardsView}
-                        {robotDataView}
+                      {dataView}
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+            {activeTab === 'notes' && (
+              <div className="tab-content fade-in-scale animate-on-mount-delay-2">
+                {/* Notes Section */}
+                <div style={{ padding: '24px' }}>
+                  <h2 style={{ marginBottom: '24px', color: '#222', fontWeight: '700' }}>Session Notes</h2>
+                  
+                  {/* Rich Text Formatting Toolbar */}
+                  <div style={{ 
+                    display: 'flex', 
+                    gap: '8px', 
+                    marginBottom: '16px', 
+                    padding: '12px', 
+                    backgroundColor: '#f8f9fa', 
+                    borderRadius: '8px',
+                    border: '1px solid #e9ecef'
+                  }}>
+                    {/* Bold Button */}
+                    <button
+                      onClick={() => hasTextSelection && toggleFormatting('bold')}
+                      disabled={!hasTextSelection}
+                      style={{
+                        padding: '8px 12px',
+                        border: '1px solid #dee2e6',
+                        borderRadius: '6px',
+                        background: notesFormatting.bold ? '#4169e1' : '#fff',
+                        color: hasTextSelection ? (notesFormatting.bold ? '#fff' : '#495057') : '#ccc',
+                        cursor: hasTextSelection ? 'pointer' : 'not-allowed',
+                        fontWeight: 'bold',
+                        fontSize: '14px',
+                        transition: 'all 0.2s ease',
+                        opacity: hasTextSelection ? 1 : 0.5
+                      }}
+                      title={hasTextSelection ? "Bold (Ctrl+B)" : "Select text to format"}
+                    >
+                      B
+                    </button>
+                    
+                    {/* Italic Button */}
+                    <button
+                      onClick={() => hasTextSelection && toggleFormatting('italic')}
+                      disabled={!hasTextSelection}
+                      style={{
+                        padding: '8px 12px',
+                        border: '1px solid #dee2e6',
+                        borderRadius: '6px',
+                        background: notesFormatting.italic ? '#4169e1' : '#fff',
+                        color: hasTextSelection ? (notesFormatting.italic ? '#fff' : '#495057') : '#ccc',
+                        cursor: hasTextSelection ? 'pointer' : 'not-allowed',
+                        fontStyle: 'italic',
+                        fontSize: '14px',
+                        transition: 'all 0.2s ease',
+                        opacity: hasTextSelection ? 1 : 0.5
+                      }}
+                      title={hasTextSelection ? "Italic (Ctrl+I)" : "Select text to format"}
+                    >
+                      I
+                    </button>
+                    
+                    {/* Underline Button */}
+                    <button
+                      onClick={() => hasTextSelection && toggleFormatting('underline')}
+                      disabled={!hasTextSelection}
+                      style={{
+                        padding: '8px 12px',
+                        border: '1px solid #dee2e6',
+                        borderRadius: '6px',
+                        background: notesFormatting.underline ? '#4169e1' : '#fff',
+                        color: hasTextSelection ? (notesFormatting.underline ? '#fff' : '#495057') : '#ccc',
+                        cursor: hasTextSelection ? 'pointer' : 'not-allowed',
+                        textDecoration: 'underline',
+                        fontSize: '14px',
+                        transition: 'all 0.2s ease',
+                        opacity: hasTextSelection ? 1 : 0.5
+                      }}
+                      title={hasTextSelection ? "Underline (Ctrl+U)" : "Select text to format"}
+                    >
+                      U
+                    </button>
+                    
+                    {/* Color Palette */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '14px', color: hasTextSelection ? '#495057' : '#ccc' }}>Color:</span>
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        {[
+                          '#000000', // Black
+                          '#FF0000', // Red
+                          '#FFA500', // Orange
+                          '#FFD700', // Yellow (Gold)
+                          '#228B22', // Forest Green
+                          '#0000FF', // Blue
+                          '#800080',  // Purple
+                        ].map((color) => (
+                          <button
+                            key={color}
+                            onClick={() => hasTextSelection && changeTextColor(color)}
+                            disabled={!hasTextSelection}
+                            style={{
+                              width: '24px',
+                              height: '24px',
+                              backgroundColor: color,
+                              border: notesFormatting.color === color ? '2px solid #333' : '1px solid #dee2e6',
+                              borderRadius: '4px',
+                              cursor: hasTextSelection ? 'pointer' : 'not-allowed',
+                              opacity: hasTextSelection ? 1 : 0.5,
+                              transition: 'all 0.2s ease'
+                            }}
+                            title={hasTextSelection ? `Change text color to ${color}` : "Select text to change color"}
+                          />
+                        ))}
                       </div>
                     </div>
                   </div>
-                </>
-              )}
-            </div>
-
-            {/* Cumulative Data Section */}
-            <div className="session-section fade-in-scale animate-on-mount-delay-4">
-              <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => toggleSection('dataReceived')}>
-                <h2>Logs ({receivedData.length})</h2>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    toggleSection('dataReceived');
-                  }}
-                  style={{
-                    background: 'none',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: '4px',
-                    borderRadius: '4px',
-                    transition: 'background-color 0.2s',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    outline: 'none'
-                  }}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = '#f0f0f0'}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = 'transparent'}
-                >
-                  <svg 
-                    xmlns="http://www.w3.org/2000/svg" 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    strokeWidth={1.5} 
-                    stroke="currentColor" 
-                    style={{ 
-                      width: '20px', 
-                      height: '20px',
-                      transform: minimizedSections.dataReceived ? 'rotate(180deg)' : 'rotate(0deg)',
-                      transition: 'transform 0.2s'
+                  
+                  {/* Enhanced Textarea (now contentEditable div) */}
+                  <div
+                    ref={notesTextareaRef}
+                    contentEditable={true}
+                    onInput={handleNotesInput}
+                    onKeyDown={handleNotesKeyDown}
+                    onFocus={handleNotesFocus}
+                    onBlur={updateFormattingState}
+                    onKeyUp={handleNotesKeyUp}
+                    onMouseUp={handleNotesMouseUp}
+                    placeholder="Enter your notes here..."
+                    style={{
+                      width: '100%',
+                      minHeight: '300px',
+                      padding: '16px',
+                      border: '1px solid #e0e0e0',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      lineHeight: '1.6',
+                      fontFamily: 'inherit',
+                      color: notesFormatting.color,
+                      backgroundColor: '#fff',
+                      boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.1)',
+                      outline: 'none',
+                      overflowY: 'auto',
+                      wordWrap: 'break-word'
                     }}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                  </svg>
-                </button>
-              </div>
-              {!minimizedSections.dataReceived && (
-                <>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', marginBottom: '12px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '16px', height: '16px', color: '#666' }}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-                      </svg>
-                      <input
-                        type="text"
-                        placeholder="Search logs..."
-                        value={dataLogSearchTerm}
-                        onChange={e => setDataLogSearchTerm(e.target.value)}
-                        style={{
-                          padding: '8px 12px',
-                          border: '1px solid #e0e0e0',
-                          borderRadius: '6px',
-                          fontSize: '14px',
-                          width: '300px',
-                          outline: 'none',
-                          transition: 'border-color 0.2s'
-                        }}
-                        onFocus={e => e.target.style.borderColor = '#4169e1'}
-                        onBlur={e => e.target.style.borderColor = '#e0e0e0'}
-                      />
-                    </div>
-                    {receivedData.length > 0 && (
-                      <button 
-                        className="clear-data-btn fade-in-scale animate-on-mount-delay-5" 
-                        onClick={clearData}
-                        style={{
-                          padding: '8px 12px',
-                          height: '36px',
-                          fontSize: '14px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}
-                      >
-                        Clear Data
-                      </button>
-                    )}
+                  />
+                  
+                  {/* Formatting Help */}
+                  <div style={{ 
+                    marginTop: '12px', 
+                    padding: '12px', 
+                    backgroundColor: '#f8f9fa', 
+                    borderRadius: '6px',
+                    fontSize: '13px',
+                    color: '#6c757d'
+                  }}>
+                    <strong>Tip:</strong> Select text and use the toolbar above to apply formatting.
                   </div>
-                  {dataView}
-                </>
-              )}
-            </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
