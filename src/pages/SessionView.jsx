@@ -3007,97 +3007,141 @@ useEffect(() => {
               Sessions
             </button>
             <div style={{ display: 'flex', alignItems: 'center', gap: 20, flex: 1 }}>
-              <input
-                type="text"
-                value={sessionName}
-                onChange={(e) => setSessionName(e.target.value)}
-                className="session-name-input animate-on-mount-delay-2"
-                onFocus={(e) => e.target.style.borderBottomColor = '#4169e1'}
-                onBlur={(e) => e.target.style.borderBottomColor = 'transparent'}
-                disabled={sessionStatus === 'ended'}
-                placeholder="Enter session name..."
-              />
-            </div>
-            <div style={{ display: 'flex', gap: 12 }}>
-              {/* Session Management Section */}
-              {(sessionStatus === 'active' || sessionStatus === 'paused' || sessionStatus === 'ended') && (
-                <>
-                  <button 
-                    className="session-btn save-btn fade-in-scale animate-on-mount-delay-4"
-                    onClick={handleSaveSession}
-                    disabled={!hasUnsavedChanges}
-                    style={{
-                      opacity: hasUnsavedChanges ? 1 : 0.5,
-                      cursor: hasUnsavedChanges ? 'pointer' : 'not-allowed',
-                      transition: 'all 0.3s ease',
-                      background: hasUnsavedChanges ? '#4169e1' : '#9ca3af',
-                      color: hasUnsavedChanges ? '#fff' : '#6b7280',
-                      border: hasUnsavedChanges ? 'none' : '1px solid #d1d5db',
-                      boxShadow: hasUnsavedChanges ? '0 2px 8px rgba(65, 105, 225, 0.2)' : 'none'
-                    }}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '18px', height: '18px' }}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 3.75V16.5L12 14.25 7.5 16.5V3.75m9 0H18A2.25 2.25 0 0 1 20.25 6v12A2.25 2.25 0 0 1 18 20.25H6A2.25 2.25 0 0 1 3.75 18V6A2.25 2.25 0 0 1 6 3.75h1.5m9 0h-9" />
-                    </svg>
-                    {hasUnsavedChanges ? 'Save' : 'Saved'}
-                  </button>
-                  {sessionStatus === 'active' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
+                {/* Session Name Header */}
+                <div style={{ 
+                  fontFamily: 'Space Mono, monospace', 
+                  fontSize: '0.9rem', 
+                  fontWeight: '600', 
+                  color: '#666', 
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  textDecoration: 'underline',
+                  textUnderlineOffset: '6px'
+                }}>
+                  Session Name
+                </div>
+                <input
+                  type="text"
+                  value={sessionName}
+                  onChange={(e) => setSessionName(e.target.value)}
+                  className="session-title-input animate-on-mount-delay-2"
+                  onFocus={(e) => e.target.style.borderColor = '#4169e1'}
+                  onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
+                  disabled={sessionStatus === 'ended'}
+                  placeholder="Enter session name..."
+                  style={{
+                    border: '1.5px solid #e0e0e0',
+                    borderRadius: '8px',
+                    padding: '12px 16px',
+                    fontSize: '1.1rem',
+                    fontWeight: '600',
+                    background: '#fff',
+                    color: '#222',
+                    transition: 'border-color 0.2s ease',
+                    outline: 'none',
+                    width: '100%',
+                    height: '40px',
+                    maxWidth: '250px'
+                  }}
+                />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {/* Session Controls Header */}
+                <div style={{ 
+                  fontFamily: 'Space Mono, monospace', 
+                  fontSize: '0.9rem', 
+                  fontWeight: '600', 
+                  color: '#666', 
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  textDecoration: 'underline',
+                  textUnderlineOffset: '6px'
+                }}>
+                  Session Controls
+                </div>
+                <div style={{ display: 'flex', gap: 12 }}>
+                  {/* Session Management Section */}
+                  {(sessionStatus === 'active' || sessionStatus === 'paused' || sessionStatus === 'ended') && (
                     <>
                       <button 
-                        className="session-btn pause-btn fade-in-scale animate-on-mount-delay-5"
-                        onClick={pauseSession}
+                        className="session-btn save-btn fade-in-scale animate-on-mount-delay-4"
+                        onClick={handleSaveSession}
+                        disabled={!hasUnsavedChanges}
+                        style={{
+                          opacity: hasUnsavedChanges ? 1 : 0.5,
+                          cursor: hasUnsavedChanges ? 'pointer' : 'not-allowed',
+                          transition: 'all 0.3s ease',
+                          background: hasUnsavedChanges ? '#4169e1' : '#9ca3af',
+                          color: hasUnsavedChanges ? '#fff' : '#6b7280',
+                          border: hasUnsavedChanges ? 'none' : '1px solid #d1d5db',
+                          boxShadow: hasUnsavedChanges ? '0 2px 8px rgba(65, 105, 225, 0.2)' : 'none'
+                        }}
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '18px', height: '18px' }}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 3.75V16.5L12 14.25 7.5 16.5V3.75m9 0H18A2.25 2.25 0 0 1 20.25 6v12A2.25 2.25 0 0 1 18 20.25H6A2.25 2.25 0 0 1 3.75 18V6A2.25 2.25 0 0 1 6 3.75h1.5m9 0h-9" />
                         </svg>
-                        Pause
+                        {hasUnsavedChanges ? 'Save' : 'Saved'}
                       </button>
-                      <button 
-                        className="session-btn end-btn fade-in-scale animate-on-mount-delay-6"
-                        onClick={handleEndSessionClick}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '18px', height: '18px' }}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 7.5A2.25 2.25 0 0 1 7.5 5.25h9a2.25 2.25 0 0 1 2.25 2.25v9a2.25 2.25 0 0 1-2.25 2.25h-9a2.25 2.25 0 0 1-2.25-2.25v-9Z" />
-                        </svg>
-                        End
-                      </button>
+                      {sessionStatus === 'active' && (
+                        <>
+                          <button 
+                            className="session-btn pause-btn fade-in-scale animate-on-mount-delay-5"
+                            onClick={pauseSession}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '18px', height: '18px' }}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25v13.5m-7.5-13.5v13.5" />
+                            </svg>
+                            Pause
+                          </button>
+                          <button 
+                            className="session-btn end-btn fade-in-scale animate-on-mount-delay-6"
+                            onClick={handleEndSessionClick}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '18px', height: '18px' }}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 7.5A2.25 2.25 0 0 1 7.5 5.25h9a2.25 2.25 0 0 1 2.25 2.25v9a2.25 2.25 0 0 1-2.25 2.25h-9a2.25 2.25 0 0 1-2.25-2.25v-9Z" />
+                            </svg>
+                            End
+                          </button>
+                        </>
+                      )}
+                      {sessionStatus === 'paused' && (
+                        <>
+                          <button 
+                            className="session-btn resume-btn fade-in-scale animate-on-mount-delay-5"
+                            onClick={handleResumeClick}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '18px', height: '18px' }}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347c-.75.412-1.667-.13-1.667-.986V5.653Z" />
+                            </svg>
+                            Resume
+                          </button>
+                          <button 
+                            className="session-btn end-btn fade-in-scale animate-on-mount-delay-6"
+                            onClick={handleEndSessionClick}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '18px', height: '18px' }}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 7.5A2.25 2.25 0 0 1 7.5 5.25h9a2.25 2.25 0 0 1 2.25 2.25v9a2.25 2.25 0 0 1-2.25 2.25h-9a2.25 2.25 0 0 1-2.25-2.25v-9Z" />
+                            </svg>
+                            End
+                          </button>
+                        </>
+                      )}
                     </>
                   )}
-                  {sessionStatus === 'paused' && (
-                    <>
-                      <button 
-                        className="session-btn resume-btn fade-in-scale animate-on-mount-delay-5"
-                        onClick={handleResumeClick}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '18px', height: '18px' }}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347c-.75.412-1.667-.13-1.667-.986V5.653Z" />
-                        </svg>
-                        Resume
-                      </button>
-                      <button 
-                        className="session-btn end-btn fade-in-scale animate-on-mount-delay-6"
-                        onClick={handleEndSessionClick}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '18px', height: '18px' }}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 7.5A2.25 2.25 0 0 1 7.5 5.25h9a2.25 2.25 0 0 1 2.25 2.25v9a2.25 2.25 0 0 1-2.25 2.25h-9a2.25 2.25 0 0 1-2.25-2.25v-9Z" />
-                        </svg>
-                        End
-                      </button>
-                    </>
+                  {sessionStatus === 'ended' && (
+                    <button 
+                      className="session-btn delete-btn fade-in-scale animate-on-mount-delay-4"
+                      onClick={deleteSession}
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '18px', height: '18px' }}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                      </svg>
+                      Delete Session
+                    </button>
                   )}
-                </>
-              )}
-              {sessionStatus === 'ended' && (
-                <button 
-                  className="session-btn delete-btn fade-in-scale animate-on-mount-delay-4"
-                  onClick={deleteSession}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '18px', height: '18px' }}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                  </svg>
-                  Delete Session
-                </button>
-              )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
