@@ -4413,7 +4413,7 @@ useEffect(() => {
                       key={`dot-${row}-${col}`}
                       cx={32 + col * (256 / (robotAnimState.gridSize - 1))}
                       cy={32 + row * (256 / (robotAnimState.gridSize - 1))}
-                      r={4}
+                      r={4 * robotAnimState.robotScale}
                       fill="#bbb"
                       opacity={0.5}
                     />
