@@ -92,8 +92,8 @@ function formatDateTime(isoString) {
 
 // Add a helper function for robot status
 function getRobotStatus({ lastBatteryTime, firstBatteryTime, lastProgramTime }, now = new Date()) {
-  // If no battery message within past 10 seconds, powered off
-  if (!lastBatteryTime || ((now - lastBatteryTime) / 1000 > 10)) {
+  // If no battery message within past 5 seconds, powered off
+  if (!lastBatteryTime || ((now - lastBatteryTime) / 1000 > 5)) {
     return 'inactive_battery';
   }
   // If first battery message is over 3 minutes old and no program has ever been run/tested, then inactive
@@ -631,8 +631,8 @@ function SessionView() {
               rawData: data,
               firstSeen: prev[deviceId]?.firstSeen || timestamp,
               status: prev[deviceId]?.status || 'inactive',
-              batteryData: { voltage: batteryLevel, timestamp },
-              lastBatteryTime: timestamp,
+              batteryData: prev[deviceId]?.batteryData || null, // Preserve existing battery data instead of using undefined batteryLevel
+              lastBatteryTime: prev[deviceId]?.lastBatteryTime || timestamp,
               buttonEvents: prev[deviceId]?.buttonEvents || [],
               assignedTo: prev[deviceId]?.assignedTo || null,
               assignmentTime: prev[deviceId]?.assignmentTime || null
@@ -1957,7 +1957,10 @@ function SessionView() {
                         style={{
                           fontWeight: lessonCompletions[selectedLessonId]?.has(robot.deviceId) ? '600' : '500',
                           color: lessonCompletions[selectedLessonId]?.has(robot.deviceId) ? '#4169e1' : '#222',
-                          transition: 'all 0.3s ease'
+                          transition: 'all 0.3s ease',
+                          minHeight: '22px',
+                          display: 'inline-flex',
+                          alignItems: 'center'
                         }}
                       >
                         {robot.deviceId}
@@ -1990,8 +1993,8 @@ function SessionView() {
                             flex: 1,
                           }}>
                             {robot.assignedTo.type === 'student'
-                              ? `Assigned: ${truncateName(robot.assignedTo.name)}`
-                              : `Assigned: ${truncateName(robot.assignedTo.name)} (${robot.assignedTo.studentCount} students)`}
+                              ? `${truncateName(robot.assignedTo.name)}`
+                              : `${truncateName(robot.assignedTo.name)} (${robot.assignedTo.studentCount} students)`}
                           </span>
                           <button
                             onClick={e => {
@@ -2395,6 +2398,7 @@ function SessionView() {
     gridSize: 5,
     offsetX: 0,
     offsetY: 0,
+    robotScale: 1.0, // New: track robot scale
     history: [{ x: 2, y: 2, dir: 0 }],
     playing: false,
   });
@@ -2415,16 +2419,23 @@ function SessionView() {
       gridSize: 5,
       offsetX: 0,
       offsetY: 0,
+      robotScale: 1.0, // New: track robot scale
       history: [{ x: 2, y: 2, dir: 0 }],
       playing: false,
     });
   };
 
   const moveRobot = (state, command) => {
-    let { x, y, dir, gridSize, offsetX, offsetY } = state;
+    let { x, y, dir, gridSize, offsetX, offsetY, robotScale } = state;
     let newDir = dir;
     let newX = x;
     let newY = y;
+    let newGridSize = gridSize;
+    let newOffsetX = offsetX;
+    let newOffsetY = offsetY;
+    let newRobotScale = robotScale;
+    
+    // Handle movement commands
     if (command === 'forward') {
       if (dir === 0) newY -= 1;
       if (dir === 1) newX += 1;
@@ -2440,30 +2451,53 @@ function SessionView() {
     } else if (command === 'left') {
       newDir = (dir + 3) % 4;
     }
-    // Expand grid if needed
-    let minX = newX, maxX = newX, minY = newY, maxY = newY;
-    for (const h of state.history) {
-      minX = Math.min(minX, h.x);
-      maxX = Math.max(maxX, h.x);
-      minY = Math.min(minY, h.y);
-      maxY = Math.max(maxY, h.y);
+    
+    // Check if robot is going beyond current grid boundaries
+    const currentMinX = -offsetX;
+    const currentMaxX = gridSize - 1 - offsetX;
+    const currentMinY = -offsetY;
+    const currentMaxY = gridSize - 1 - offsetY;
+    
+    let needsExpansion = false;
+    
+    // Check if robot is moving beyond current grid boundaries
+    if (newX < currentMinX || newX > currentMaxX || newY < currentMinY || newY > currentMaxY) {
+      needsExpansion = true;
     }
-    let newGridSize = state.gridSize;
-    let newOffsetX = state.offsetX;
-    let newOffsetY = state.offsetY;
-    // If out of bounds, expand grid and adjust offsets
-    if (newX < 0) { newOffsetX += 1; newX += 1; state.history.forEach(h => h.x += 1); minX += 1; maxX += 1; }
-    if (newY < 0) { newOffsetY += 1; newY += 1; state.history.forEach(h => h.y += 1); minY += 1; maxY += 1; }
-    if (newX >= newGridSize) newGridSize = newX + 1;
-    if (newY >= newGridSize) newGridSize = newY + 1;
+    
+    if (needsExpansion) {
+      // Expand grid by 2 (5→7→9→11→13...)
+      newGridSize = gridSize + 2;
+      
+      // Calculate the bounds of the robot's path including the new position
+      let minX = newX, maxX = newX, minY = newY, maxY = newY;
+      for (const h of state.history) {
+        minX = Math.min(minX, h.x);
+        maxX = Math.max(maxX, h.x);
+        minY = Math.min(minY, h.y);
+        maxY = Math.max(maxY, h.y);
+      }
+      
+      // Calculate new offsets to center the robot's path
+      newOffsetX = Math.floor((newGridSize - 1) / 2) - Math.floor((maxX + minX) / 2);
+      newOffsetY = Math.floor((newGridSize - 1) / 2) - Math.floor((maxY + minY) / 2);
+      
+      // Scale down robot by 15% for each expansion
+      const expansionFactor = newGridSize / Math.max(state.gridSize, 5);
+      if (expansionFactor > 1) {
+        newRobotScale = robotScale * 0.85; // 15% reduction
+      }
+    }
+    
     return {
       ...state,
       x: newX,
       y: newY,
       dir: newDir,
-      gridSize: Math.max(newGridSize, 5),
+      gridSize: newGridSize,
       offsetX: newOffsetX,
       offsetY: newOffsetY,
+      robotScale: newRobotScale,
       history: [...state.history, { x: newX, y: newY, dir: newDir }],
     };
   };
@@ -2479,7 +2513,7 @@ function SessionView() {
         return { ...nextState, step: step + 1, playing: prev.playing };
       } else if (!forward && step > 0) {
         // Rewind: replay from start up to step-1
-        let state = { x: 2, y: 2, dir: 0, step: 0, gridSize: 5, offsetX: 0, offsetY: 0, history: [{ x: 2, y: 2, dir: 0 }], playing: false };
+        let state = { x: 2, y: 2, dir: 0, step: 0, gridSize: 5, offsetX: 0, offsetY: 0, robotScale: 1.0, history: [{ x: 2, y: 2, dir: 0 }], playing: false };
         for (let i = 0; i < step - 1; ++i) {
           state = moveRobot(state, commands[i]);
           state.step = i + 1;
@@ -3099,7 +3133,7 @@ useEffect(() => {
                   borderBottom: activeTab === 'main' ? '2px solid #4169e1' : '2px solid transparent'
                 }}
               >
-                Main Session
+                Session
               </button>
               <button
                 onClick={() => setActiveTab('notes')}
@@ -3166,33 +3200,44 @@ useEffect(() => {
                     </button>
                   </div>
                   {!minimizedSections.connection && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                      <button 
-                        className={`connection-btn ${isConnected ? 'disconnect' : 'connect'} fade-in-scale animate-on-mount-delay-2`}
-                        onClick={isConnected ? disconnectFromMicrobit : connectToMicrobit}
-                        disabled={sessionStatus === 'ended' || sessionStatus === 'paused'}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '18px', height: '18px' }}>
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M8.288 15.038a5.25 5.25 0 0 1 7.424 0M5.106 11.856c3.807-3.808 9.98-3.808 13.788 0M1.924 8.674c5.565-5.565 14.587-5.565 20.152 0M12.53 18.22l-.53.53-.53-.53a.75.75 0 0 1 1.06 0Z" />
+                    <>
+                      <div style={{ marginBottom: '12px', padding: '8px 0px', backgroundColor: 'transparent', borderRadius: '6px', border: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '16px', height: '16px', color: '#666', flexShrink: 0 }}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 9.75a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 0 1 .778-.332 48.294 48.294 0 0 0 5.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
                         </svg>
-                        {isConnected ? 'Disconnect' : 'Connect'}
-                      </button>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <div 
-                          className={`status-dot ${isConnected ? 'connected' : ''} animate-on-mount-delay-3`}
-                          style={{
-                            width: '12px',
-                            height: '12px',
-                            borderRadius: '50%',
-                            backgroundColor: isConnected ? '#4CAF50' : '#b0b0b0',
-                            transition: 'background-color 0.3s ease'
-                          }}
-                        ></div>
-                        <span style={{ color: '#666', fontSize: '14px' }}>
-                          {isConnected ? 'Connected to micro:bit' : 'Not connected'}
-                        </span>
+                        {/* header tip */}
+                        <p style={{ margin: 0, color: '#666', fontSize: '12px', lineHeight: '1.4', fontFamily: 'Space Mono, monospace' }}>
+                          Plug in your receiver micro:bit to your computer and click the button below to connect.
+                        </p>
                       </div>
-                    </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                        <button 
+                          className={`connection-btn ${isConnected ? 'disconnect' : 'connect'} fade-in-scale animate-on-mount-delay-2`}
+                          onClick={isConnected ? disconnectFromMicrobit : connectToMicrobit}
+                          disabled={sessionStatus === 'ended' || sessionStatus === 'paused'}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '18px', height: '18px' }}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M8.288 15.038a5.25 5.25 0 0 1 7.424 0M5.106 11.856c3.807-3.808 9.98-3.808 13.788 0M1.924 8.674c5.565-5.565 14.587-5.565 20.152 0M12.53 18.22l-.53.53-.53-.53a.75.75 0 0 1 1.06 0Z" />
+                          </svg>
+                          {isConnected ? 'Disconnect' : 'Connect'}
+                        </button>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div 
+                            className={`status-dot ${isConnected ? 'connected' : ''} animate-on-mount-delay-3`}
+                            style={{
+                              width: '12px',
+                              height: '12px',
+                              borderRadius: '50%',
+                              backgroundColor: isConnected ? '#4CAF50' : '#b0b0b0',
+                              transition: 'background-color 0.3s ease'
+                            }}
+                          ></div>
+                          <span style={{ color: '#666', fontSize: '14px' }}>
+                            {isConnected ? 'Connected to micro:bit' : 'Not connected'}
+                          </span>
+                        </div>
+                      </div>
+                    </>
                   )}
                 </div>
 
@@ -3239,6 +3284,15 @@ useEffect(() => {
                   </div>
                   {!minimizedSections.lessonProgress && (
                     <>
+                      <div style={{ marginBottom: '12px', padding: '8px 0px', backgroundColor: 'transparent', borderRadius: '6px', border: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '16px', height: '16px', color: '#666', flexShrink: 0 }}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 9.75a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 0 1 .778-.332 48.294 48.294 0 0 0 5.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
+                        </svg>
+                        {/* header tip */}
+                        <p style={{ margin: 0, color: '#666', fontSize: '12px', lineHeight: '1.4', fontFamily: 'Space Mono, monospace' }}>
+                          Select a lesson and track your students' progress. When you mark a student as complete, the progress bar will update.
+                        </p>
+                      </div>
                       {/* Lesson selection dropdown and Lesson History button in one row */}
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, gap: 16 }}>
                         <div>
@@ -3434,6 +3488,15 @@ useEffect(() => {
                   
                   {!minimizedSections.robotsAndPrograms && (
                     <>
+                      <div style={{ marginBottom: '12px', padding: '8px 0px', backgroundColor: 'transparent', borderRadius: '6px', border: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '16px', height: '16px', color: '#666', flexShrink: 0 }}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 9.75a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 0 1 .778-.332 48.294 48.294 0 0 0 5.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
+                        </svg>
+                        {/* header tip */}
+                        <p style={{ margin: 0, color: '#666', fontSize: '12px', lineHeight: '1.4', fontFamily: 'Space Mono, monospace' }}>
+                          Once you have connected your micro:bit, robots that have sent data will appear here.
+                        </p>
+                      </div>
                       {/* Single column layout for Robots */}
                       <div style={{ 
                         minWidth: 0,
@@ -3682,6 +3745,15 @@ useEffect(() => {
                   </div>
                   {!minimizedSections.dataReceived && (
                     <>
+                      <div style={{ marginBottom: '12px', padding: '8px 0px', backgroundColor: 'transparent', borderRadius: '6px', border: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '16px', height: '16px', color: '#666', flexShrink: 0 }}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 9.75a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 0 1 .778-.332 48.294 48.294 0 0 0 5.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
+                        </svg>
+                        {/* header tip */}
+                        <p style={{ margin: 0, color: '#666', fontSize: '12px', lineHeight: '1.4', fontFamily: 'Space Mono, monospace' }}>
+                          View data being sent to your receiver micro:bit in real-time.
+                        </p>
+                      </div>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', marginBottom: '12px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '16px', height: '16px', color: '#666' }}>
@@ -4119,7 +4191,7 @@ useEffect(() => {
                     placeholder="Search recent programs..."
                     value={robotDetailsProgramsSearch}
                     onChange={e => setRobotDetailsProgramsSearch(e.target.value)}
-                    style={{ marginBottom: '10px', padding: '8px 12px', border: '1px solid #e0e0e0', borderRadius: '6px', fontSize: '14px' }}
+                    style={{ marginBottom: '10px', padding: '8px 12px', border: '1px solid #e0e0e0', borderRadius: '6px', fontSize: '14px', fontFamily: 'Space Mono, monospace' }}
                   />
                   <div style={{ flex: 1, overflow: 'auto', paddingRight: '8px' }}>
                     {(() => {
@@ -4221,7 +4293,7 @@ useEffect(() => {
                     placeholder="Search logs..."
                     value={robotDetailsLogsSearch}
                     onChange={e => setRobotDetailsLogsSearch(e.target.value)}
-                    style={{ marginBottom: '10px', padding: '8px 12px', border: '1px solid #e0e0e0', borderRadius: '6px', fontSize: '14px' }}
+                    style={{ marginBottom: '10px', padding: '8px 12px', border: '1px solid #e0e0e0', borderRadius: '6px', fontSize: '14px', fontFamily: 'Space Mono, monospace' }}
                   />
                   <div style={{ flex: 1, overflow: 'auto', paddingRight: '8px' }}>
                     {(() => {
@@ -4334,13 +4406,13 @@ useEffect(() => {
             {/* Dotted grid with robot */}
             <div style={{ position: 'relative', width: 320, height: 320, margin: '0 auto', background: 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <svg width={320} height={320} style={{ position: 'absolute', top: 0, left: 0, zIndex: 1 }}>
-                {/* Draw grid dots */}
+                {/* Draw grid dots - show actual grid size */}
                 {Array.from({ length: robotAnimState.gridSize }).map((_, row) =>
                   Array.from({ length: robotAnimState.gridSize }).map((_, col) => (
                     <circle
                       key={`dot-${row}-${col}`}
-                      cx={32 + col * 64}
-                      cy={32 + row * 64}
+                      cx={32 + col * (256 / (robotAnimState.gridSize - 1))}
+                      cy={32 + row * (256 / (robotAnimState.gridSize - 1))}
                       r={4}
                       fill="#bbb"
                       opacity={0.5}
@@ -4354,10 +4426,10 @@ useEffect(() => {
                 alt="Robot"
                 className="program-animation-robot"
                 style={{
-                  left: 25 + (robotAnimState.x - robotAnimState.offsetX) * 64 - 24,
-                  top: 20 + (robotAnimState.y - robotAnimState.offsetY) * 64 - 24,
-                  width: 60,
-                  height: 70,
+                  left: 32 + (robotAnimState.x + robotAnimState.offsetX) * (256 / (robotAnimState.gridSize - 1)) - (30 * robotAnimState.robotScale),
+                  top: 32 + (robotAnimState.y + robotAnimState.offsetY) * (256 / (robotAnimState.gridSize - 1)) - (35 * robotAnimState.robotScale),
+                  width: 60 * robotAnimState.robotScale,
+                  height: 70 * robotAnimState.robotScale,
                   zIndex: 2,
                   transform: `rotate(${robotAnimState.dir * 90}deg)`
                 }}
@@ -4531,40 +4603,43 @@ useEffect(() => {
                   </tr>
                 </thead>
                 <tbody>
-                  {lessons.filter(lesson => lesson.id !== 'none').map(lesson => (
+                  {lessons.filter(lesson => lesson.id !== 'none').filter(lesson => 
+                    lessonCompletions[lesson.id] && lessonCompletions[lesson.id].size > 0
+                  ).map(lesson => (
                     <tr key={lesson.id}>
                       <td style={{ padding: '8px', borderBottom: '1px solid #e0e0e0', fontWeight: 600 }}>{lesson.name}</td>
                       <td style={{ padding: '8px', borderBottom: '1px solid #e0e0e0' }}>
-                        {lessonCompletions[lesson.id] && lessonCompletions[lesson.id].size > 0 ? (
-                          <ul style={{ margin: 0, paddingLeft: 18 }}>
-                            {Array.from(lessonCompletions[lesson.id]).map(deviceId => {
-                              const robot = robots[deviceId];
-                              let tag = '';
-                              if (robot?.assignedTo) {
-                                tag = robot.assignedTo.type === 'student'
-                                  ? robot.assignedTo.name
-                                  : `${robot.assignedTo.name} (Group)`;
-                              }
-                              return (
-                                <li key={deviceId} style={{ marginBottom: 2 }}>
-                                  <span style={{ fontFamily: 'Space Mono, monospace', fontWeight: 600 }}>{deviceId}</span>
-                                  {tag && (
-                                    <span style={{ color: '#4169e1', marginLeft: 8, fontWeight: 500, fontSize: 13 }}>
-                                      [{tag}]
-                                    </span>
-                                  )}
-                                </li>
-                              );
-                            })}
-                          </ul>
-                        ) : (
-                          <span style={{ color: '#888' }}>No robots completed</span>
-                        )}
+                        <ul style={{ margin: 0, paddingLeft: 18 }}>
+                          {Array.from(lessonCompletions[lesson.id]).map(deviceId => {
+                            const robot = robots[deviceId];
+                            let tag = '';
+                            if (robot?.assignedTo) {
+                              tag = robot.assignedTo.type === 'student'
+                                ? robot.assignedTo.name
+                                : `${robot.assignedTo.name} (Group)`;
+                            }
+                            return (
+                              <li key={deviceId} style={{ marginBottom: 2 }}>
+                                <span style={{ fontFamily: 'Space Mono, monospace', fontWeight: 600 }}>{deviceId}</span>
+                                {tag && (
+                                  <span style={{ color: '#4169e1', marginLeft: 8, fontWeight: 500, fontSize: 13 }}>
+                                    [{tag}]
+                                  </span>
+                                )}
+                              </li>
+                            );
+                          })}
+                        </ul>
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+              <div style={{ marginTop: '20px', padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '8px', border: '1px solid #e0e0e0' }}>
+                <p style={{ margin: 0, color: '#666', fontSize: '14px', lineHeight: '1.5' }}>
+                  Tip: Lessons with no completed robots are not shown here.
+                </p>
+              </div>
             </div>
             <div className="modal-footer">
               <button className="btn-secondary" onClick={() => setShowLessonHistoryModal(false)}>
