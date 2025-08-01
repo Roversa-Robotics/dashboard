@@ -3945,7 +3945,7 @@ useEffect(() => {
                               height: '24px',
                               backgroundColor: color,
                               border: notesFormatting.color === color ? '2px solid #333' : '1px solid #dee2e6',
-                              borderRadius: '4px',
+                              borderRadius: '1000px',
                               cursor: hasTextSelection ? 'pointer' : 'not-allowed',
                               opacity: hasTextSelection ? 1 : 0.5,
                               transition: 'all 0.2s ease'
