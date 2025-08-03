@@ -409,7 +409,17 @@ function Classrooms() {
       {/* Main Content */}
       <div className="main-content slide-in-from-bottom">
         <div className="top-bar slide-in-from-top" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, marginBottom: 32 }}>
-          <h1 style={{ margin: 0, fontSize: '2rem', fontWeight: 700, color: '#222' }}>Classrooms</h1>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <h1 style={{ margin: 0, fontSize: '2rem', fontWeight: 700, color: '#222' }}>Classrooms</h1>
+            <span style={{ 
+              fontSize: '0.9rem', 
+              color: '#666', 
+              fontWeight: '400',
+              fontFamily: 'Space Mono, monospace'
+            }}>
+              Create a classroom to organize students and groups for sessions
+            </span>
+          </div>
           <button className="create-classroom-btn fade-in-scale animate-on-mount-delay-1" onClick={() => setShowCreateModal(true)}>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" width="20" height="20">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />

@@ -237,9 +237,19 @@ export default function Lessons() {
         <Sidebar className="slide-in-from-left" />
         <div className="main-content slide-in-from-bottom">
           <div className="top-bar slide-in-from-top" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <h1 className="dashboard-welcome" style={{ fontFamily: 'Bevan, serif', fontWeight: 400 }}>
-              Lessons
-            </h1>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <h1 className="dashboard-welcome" style={{ fontFamily: 'Bevan, serif', fontWeight: 400, margin: 0 }}>
+                Lessons
+              </h1>
+              <span style={{ 
+                fontSize: '0.9rem', 
+                color: '#666', 
+                fontWeight: '400',
+                fontFamily: 'Space Mono, monospace'
+              }}>
+                Choose or create a lesson for use in your classroom and related sessions
+              </span>
+            </div>
             <button
               className="create-classroom-btn"
               onClick={() => setShowCreateModal(true)}
