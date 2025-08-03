@@ -25,6 +25,7 @@ function Classrooms() {
   const [editClassroomName, setEditClassroomName] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [classroomToDelete, setClassroomToDelete] = useState(null);
+  const [lessons, setLessons] = useState([]);
 
   // Predefined themes with gradient colors
   const themes = {
@@ -140,6 +141,70 @@ function Classrooms() {
     await setDoc(docRef, { classrooms });
   };
 
+  // Helper to load lessons from Firestore
+  const loadLessons = async (user) => {
+    if (!user) return;
+    const docRef = doc(db, 'users', user.uid, 'appdata', 'lessons');
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      setLessons(docSnap.data().lessons || []);
+    } else {
+      setLessons([]);
+    }
+  };
+
+  // Helper to save lessons to Firestore
+  const saveLessons = async (user, lessonsArr) => {
+    if (!user) return;
+    const docRef = doc(db, 'users', user.uid, 'appdata', 'lessons');
+    await setDoc(docRef, { lessons: lessonsArr });
+  };
+
+  // Helper to add lesson to classroom
+  const handleAddLessonToClassroom = async (classroomId, lessonId) => {
+    const lesson = lessons.find(l => l.id === lessonId);
+    if (!lesson) return;
+
+    const updatedClassrooms = classrooms.map(classroom => {
+      if (classroom.id === classroomId) {
+        const existingLessons = classroom.lessons || [];
+        if (!existingLessons.find(l => l.id === lessonId)) {
+          return {
+            ...classroom,
+            lessons: [...existingLessons, lesson]
+          };
+        }
+      }
+      return classroom;
+    });
+
+    await saveClassrooms(user, updatedClassrooms);
+    setClassrooms(updatedClassrooms);
+    if (selectedClassroom?.id === classroomId) {
+      setSelectedClassroom(updatedClassrooms.find(c => c.id === classroomId));
+    }
+  };
+
+  // Helper to remove lesson from classroom
+  const handleRemoveLessonFromClassroom = async (classroomId, lessonId) => {
+    const updatedClassrooms = classrooms.map(classroom => {
+      if (classroom.id === classroomId) {
+        const existingLessons = classroom.lessons || [];
+        return {
+          ...classroom,
+          lessons: existingLessons.filter(l => l.id !== lessonId)
+        };
+      }
+      return classroom;
+    });
+
+    await saveClassrooms(user, updatedClassrooms);
+    setClassrooms(updatedClassrooms);
+    if (selectedClassroom?.id === classroomId) {
+      setSelectedClassroom(updatedClassrooms.find(c => c.id === classroomId));
+    }
+  };
+
   // Replace all localStorage classroom logic with Firestore logic
   // Example: when creating a classroom
   const handleCreateClassroom = async () => {
@@ -170,12 +235,12 @@ function Classrooms() {
   };
 
   const handleAddStudent = async () => {
-    if (!newStudentName.trim() || !newStudentEmail.trim()) return;
+    if (!newStudentName.trim()) return;
 
     const newStudent = {
       id: Date.now().toString(),
       name: newStudentName,
-      email: newStudentEmail,
+      email: newStudentEmail.trim() || null,
       addedAt: new Date().toISOString()
     };
 
@@ -325,6 +390,7 @@ function Classrooms() {
       } else {
         setUser(user);
         loadClassrooms(user);
+        loadLessons(user);
       }
     });
     return () => unsubscribe();
@@ -511,25 +577,31 @@ function Classrooms() {
                   type="text"
                   value={editClassroomName}
                   onChange={handleClassroomNameChange}
-                  onBlur={saveClassroomName}
                   onKeyDown={handleClassroomNameKeyDown}
                   className="classroom-name-input"
-                  style={{
-                    fontSize: '1.5rem',
-                    fontWeight: 700,
-                    border: 'none',
-                    background: 'transparent',
-                    color: '#222',
-                    padding: '8px 0',
-                    borderBottom: '2px solid transparent',
-                    minWidth: 200,
-                    outline: 'none',
-                    transition: 'border-color 0.2s',
+                  onFocus={(e) => e.target.style.borderColor = '#4169e1'}
+                  onBlur={(e) => {
+                    e.target.style.borderColor = '#e0e0e0';
+                    saveClassroomName();
                   }}
-                  onFocus={e => (e.target.style.borderBottomColor = '#4169e1')}
-                  onBlurCapture={e => (e.target.style.borderBottomColor = 'transparent')}
                   placeholder="Enter classroom name..."
                   maxLength={60}
+                  style={{
+                    border: '1.5px solid #e0e0e0',
+                    borderRadius: '8px',
+                    padding: '12px 16px',
+                    fontSize: '1.4rem',
+                    fontWeight: '600',
+                    background: '#fff',
+                    color: '#222',
+                    transition: 'border-color 0.2s ease',
+                    outline: 'none',
+                    width: '100%',
+                    height: '45px',
+                    maxWidth: '250px',
+                    marginTop: '-10px',
+                    marginBottom: '0px'
+                  }}
                 />
               </div>
               <button className="modal-close" onClick={() => setSelectedClassroom(null)}>
@@ -664,6 +736,7 @@ function Classrooms() {
                                     }
                                   }}
                                   defaultValue=""
+                                  style={{ fontFamily: 'Space Mono, monospace' }}
                                 >
                                   <option value="">Add student to group...</option>
                                   {selectedClassroom.students
@@ -679,6 +752,69 @@ function Classrooms() {
                             )}
                           </div>
                         ))
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Lessons Section */}
+                  <div className="section">
+                    <div className="section-header">
+                      <h3>Lessons</h3>
+                    </div>
+                    <div className="lessons-list">
+                      {(selectedClassroom.lessons || []).length === 0 ? (
+                        <div className="empty-list">
+                          <p>No lessons assigned to this classroom</p>
+                        </div>
+                      ) : (
+                        selectedClassroom.lessons.map(lesson => (
+                          <div key={lesson.id} className="lesson-item">
+                            <div className="lesson-info">
+                              <div className="lesson-avatar">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="16" height="16">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+                                </svg>
+                              </div>
+                              <div className="lesson-details">
+                                <span className="lesson-name">{lesson.title}</span>
+                                <span className="lesson-overview">{lesson.overview}</span>
+                                <span className="lesson-age">{lesson.age}</span>
+                              </div>
+                            </div>
+                            <button 
+                              className="remove-btn"
+                              onClick={() => handleRemoveLessonFromClassroom(selectedClassroom.id, lesson.id)}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="14" height="14">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                        ))
+                      )}
+                      {lessons.length > 0 && (
+                        <div className="add-to-lessons">
+                          <select 
+                            onChange={(e) => {
+                              if (e.target.value) {
+                                handleAddLessonToClassroom(selectedClassroom.id, e.target.value);
+                                e.target.value = '';
+                              }
+                            }}
+                            defaultValue=""
+                            style={{ fontFamily: 'Space Mono, monospace' }}
+                          >
+                            <option value="">Add lesson to classroom...</option>
+                            {lessons
+                              .filter(lesson => !(selectedClassroom.lessons || []).find(l => l.id === lesson.id))
+                              .map(lesson => (
+                                <option key={lesson.id} value={lesson.id}>
+                                  {lesson.title}
+                                </option>
+                              ))
+                            }
+                          </select>
+                        </div>
                       )}
                     </div>
                   </div>
@@ -717,7 +853,7 @@ function Classrooms() {
                   type="email"
                   value={newStudentEmail}
                   onChange={(e) => setNewStudentEmail(e.target.value)}
-                  placeholder="Enter student email"
+                  placeholder="Enter student email (optional)"
                 />
               </div>
             </div>

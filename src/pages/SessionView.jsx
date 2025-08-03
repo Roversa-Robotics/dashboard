@@ -43,7 +43,7 @@ function BatteryBar({ voltage, cardHeight = 60 }) {
         bottom: 0,
         left: 0,
         right: 0,
-        height: '30px',
+        height: '28px',
         background: 'transparent',
         borderBottomLeftRadius: 16,
         borderBottomRightRadius: 16,
@@ -274,6 +274,49 @@ function SessionView() {
       ...prev,
       [sectionName]: !prev[sectionName]
     }));
+  };
+
+  // NEW: Handle classroom change
+  const handleClassroomChange = async (newClassroomId) => {
+    if (!sessionData) return;
+    
+    // Clear all robot assignments when classroom changes
+    const updatedRobots = {};
+    Object.keys(robots).forEach(deviceId => {
+      updatedRobots[deviceId] = {
+        ...robots[deviceId],
+        assignedTo: null,
+        assignedToType: null,
+        assignedToName: null
+      };
+    });
+    
+    setRobots(updatedRobots);
+    setSelectedClassroom(newClassroomId ? getClassroomById(newClassroomId) : null);
+    setHasUnsavedChanges(true);
+    
+    // Update session data with new classroom
+    const updatedSessionData = {
+      ...sessionData,
+      classroomId: newClassroomId || null
+    };
+    setSessionData(updatedSessionData);
+  };
+
+  // NEW: Clear all robot assignments
+  const clearAllRobotAssignments = () => {
+    const updatedRobots = {};
+    Object.keys(robots).forEach(deviceId => {
+      updatedRobots[deviceId] = {
+        ...robots[deviceId],
+        assignedTo: null,
+        assignedToType: null,
+        assignedToName: null
+      };
+    });
+    
+    setRobots(updatedRobots);
+    setHasUnsavedChanges(true);
   };
 
   // Function to check if current state differs from last saved state
@@ -1000,6 +1043,8 @@ function SessionView() {
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (!user) return;
+      
+      // Load lessons from Firestore
       const docRef = doc(db, 'users', user.uid, 'appdata', 'lessons');
       const docSnap = await getDoc(docRef);
       let loaded = [];
@@ -1011,15 +1056,28 @@ function SessionView() {
           link: l.link || '',
         }));
       }
-      // Merge with defaults, avoid duplicates by id
-      const merged = [...DEFAULT_LESSONS];
-      loaded.forEach(l => {
-        if (!merged.some(def => def.id === l.id)) merged.push(l);
-      });
-      setLessons([{ id: 'none', name: 'None' }, ...merged]);
+      
+      // If session has a classroom, use classroom-specific lessons
+      if (sessionData && sessionData.classroomId && selectedClassroom) {
+        const classroomLessons = selectedClassroom.lessons || [];
+        const classroomLessonIds = classroomLessons.map(l => l.id);
+        
+        // Filter loaded lessons to only include classroom lessons
+        const filteredLessons = loaded.filter(l => classroomLessonIds.includes(l.id));
+        
+        // Only include lessons that are specifically assigned to the classroom
+        setLessons([{ id: 'none', name: 'None' }, ...filteredLessons]);
+      } else {
+        // Use all lessons if no classroom is associated
+        const merged = [...DEFAULT_LESSONS];
+        loaded.forEach(l => {
+          if (!merged.some(def => def.id === l.id)) merged.push(l);
+        });
+        setLessons([{ id: 'none', name: 'None' }, ...merged]);
+      }
     });
     return () => unsubscribe();
-  }, []);
+  }, [sessionData, selectedClassroom]);
 
   // Update session data when robots or received data changes
   useEffect(() => {
@@ -1748,9 +1806,7 @@ function SessionView() {
                   boxShadow: lessonCompletions[selectedLessonId]?.has(robot.deviceId) 
                     ? '0 4px 20px rgba(65, 105, 225, 0.15)' 
                     : '0 2px 12px rgba(65, 105, 225, 0.08)',
-                  border: highlightedRobot === robot.deviceId ? '2px solid #4169e1' : (lessonCompletions[selectedLessonId]?.has(robot.deviceId) 
-                    ? '2px solid #4169e1' 
-                    : '2px solid #e0e0e0'),
+                  border: selectedRobotsForTagging.has(robot.deviceId) ? '2px solid #4169e1' : '2px solid #e0e0e0',
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                   cursor: 'pointer',
                   position: 'relative',
@@ -1905,37 +1961,38 @@ function SessionView() {
                 {/* Left column: robot info, actions, assignment */}
                 <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', flex: 1, minWidth: 0, gap: '18px' }}>
                   {/* Selection checkbox */}
-                  <label
+                  <div
+                    onClick={e => {
+                      e.stopPropagation();
+                      toggleRobotSelection(robot.deviceId);
+                    }}
                     style={{
                       marginRight: '0',
                       zIndex: 5,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      height: '100%',
                       alignSelf: 'center',
                       padding: '6px',
                       borderRadius: '6px',
                       cursor: 'pointer',
-                      minWidth: '32px',
-                      minHeight: '32px',
+                      minWidth: '25px',
+                      minHeight: '25px',
                       boxSizing: 'border-box',
                       userSelect: 'none',
+                      width: '28px',
+                      height: '28px',
+                      border: selectedRobotsForTagging.has(robot.deviceId) ? '2px solid #4169e1' : '2px solid #e0e0e0',
+                      backgroundColor: selectedRobotsForTagging.has(robot.deviceId) ? '#4169e1' : 'transparent',
+                      transition: 'all 0.2s ease'
                     }}
-                    onClick={e => e.stopPropagation()}
                   >
-                    <input
-                      type="checkbox"
-                      checked={selectedRobotsForTagging.has(robot.deviceId)}
-                      onChange={() => toggleRobotSelection(robot.deviceId)}
-                      style={{
-                        width: '18px',
-                        height: '18px',
-                        cursor: 'pointer',
-                        margin: 0
-                      }}
-                    />
-                  </label>
+                    {selectedRobotsForTagging.has(robot.deviceId) && (
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3.5} stroke="currentColor" style={{ width: 25, height: 25, color: '#fff' }}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                      </svg>
+                    )}
+                  </div>
                   {/* Robot image */}
                   <img 
                     src={robotGraphic} 
@@ -1977,7 +2034,7 @@ function SessionView() {
                           fontSize: '12px',
                           color: lessonCompletions[selectedLessonId]?.has(robot.deviceId) ? '#4169e1' : '#666',
                           fontWeight: '500',
-                          border: lessonCompletions[selectedLessonId]?.has(robot.deviceId) ? '1px solid #4169e1' : '1px solid #e0e0e0',
+                          border: selectedRobotsForTagging.has(robot.deviceId) ? '1px solid #4169e1' : '1px solid #e0e0e0',
                           boxSizing: 'border-box',
                           boxShadow: lessonCompletions[selectedLessonId]?.has(robot.deviceId)
                             ? '0 2px 8px rgba(39, 75, 181, 0.08)'
@@ -3197,6 +3254,24 @@ useEffect(() => {
               >
                 Notes
               </button>
+              <button
+                onClick={() => setActiveTab('settings')}
+                style={{
+                  flex: 1,
+                  padding: '12px 24px',
+                  border: 'none',
+                  background: activeTab === 'settings' ? '#4169e1' : 'transparent',
+                  color: activeTab === 'settings' ? 'white' : '#666',
+                  cursor: 'pointer',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  borderRadius: '8px 8px 0 0',
+                  transition: 'all 0.2s ease',
+                  borderBottom: activeTab === 'settings' ? '2px solid #4169e1' : '2px solid transparent'
+                }}
+              >
+                Settings
+              </button>
             </div>
 
             {/* Tab Content */}
@@ -3348,7 +3423,15 @@ useEffect(() => {
                               setSelectedLessonId(e.target.value);
                               setActiveLessonTab(e.target.value);
                             }}
-                            style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid #e0e0e0', fontSize: 14, fontFamily: 'Space Mono, monospace' }}
+                            style={{ 
+                              padding: '6px 12px', 
+                              borderRadius: 6, 
+                              border: '1px solid #e0e0e0', 
+                              fontSize: 14, 
+                              fontFamily: 'Space Mono, monospace',
+                              width: '200px',
+                              minWidth: '200px'
+                            }}
                           >
                             {lessons.map(lesson => (
                               <option key={lesson.id} value={lesson.id} style={{ fontFamily: 'Space Mono, monospace' }}>{lesson.name}</option>
@@ -3997,6 +4080,139 @@ useEffect(() => {
                   }}>
                     <strong>Tip:</strong> Select text and use the toolbar above to apply formatting.
                   </div>
+                </div>
+              </div>
+            )}
+            {activeTab === 'settings' && (
+              <div className="tab-content fade-in-scale animate-on-mount-delay-2">
+                {/* Settings Section */}
+                <div style={{ padding: '24px' }}>
+                  <h2 style={{ marginBottom: '24px', color: '#222', fontWeight: '700' }}>Session Settings</h2>
+                  
+                  {/* Classroom Settings */}
+                  <div style={{ 
+                    marginBottom: '32px',
+                    padding: '24px',
+                    backgroundColor: '#f8f9fa',
+                    borderRadius: '12px',
+                    border: '1px solid #e9ecef'
+                  }}>
+                    <h3 style={{ marginBottom: '16px', color: '#222', fontWeight: '600' }}>
+                      Classroom
+                    </h3>
+                    <p style={{ 
+                      marginBottom: '16px', 
+                      color: '#666', 
+                      fontSize: '14px',
+                      lineHeight: '1.5'
+                    }}>
+                      Change the classroom associated with this session. When you change the classroom, <strong>all robot assignments will be cleared.</strong>
+                    </p>
+                    
+                    <div style={{ marginBottom: '16px' }}>
+                      <label style={{ 
+                        display: 'block', 
+                        marginBottom: '8px', 
+                        fontWeight: '500', 
+                        color: '#333' 
+                      }}>
+                      </label>
+                      {selectedClassroom ? (
+                        <div style={{
+                          display: 'inline-block',
+                          padding: '8px 12px',
+                          backgroundColor: selectedClassroom.color || '#4169e1',
+                          color: '#fff',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          fontWeight: '500'
+                        }}>
+                          Current Classroom: {selectedClassroom.name}
+                        </div>
+                      ) : (
+                        <div style={{
+                          display: 'inline-block',
+                          padding: '8px 12px',
+                          backgroundColor: '#e0e0e0',
+                          color: '#666',
+                          borderRadius: '6px',
+                          fontSize: '14px',
+                          fontWeight: '500'
+                        }}>
+                          No classroom assigned
+                        </div>
+                      )}
+                    </div>
+                    
+                    <div style={{ marginBottom: '16px' }}>
+                      <label style={{ 
+                        display: 'block', 
+                        marginBottom: '8px', 
+                        fontWeight: '500', 
+                        color: '#333' 
+                      }}>
+                        Change to:
+                      </label>
+                      <select
+                        value={selectedClassroom?.id || ''}
+                        onChange={(e) => handleClassroomChange(e.target.value || null)}
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          border: '1px solid #e0e0e0',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          backgroundColor: '#fff',
+                          color: '#222',
+                          fontFamily: 'Space Mono, monospace'
+                        }}
+                      >
+                        <option value="">No classroom</option>
+                        {classrooms.map(classroom => (
+                          <option key={classroom.id} value={classroom.id}>
+                            {classroom.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                  </div>
+                  
+                  {/* Session Information */}
+                  {/* <div style={{ 
+                    padding: '24px',
+                    backgroundColor: '#f8f9fa',
+                    borderRadius: '12px',
+                    border: '1px solid #e9ecef'
+                  }}>
+                    <h3 style={{ marginBottom: '16px', color: '#222', fontWeight: '600' }}>
+                      Session Information
+                    </h3>
+                    <div style={{ display: 'grid', gap: '12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontWeight: '500', color: '#666' }}>Session ID:</span>
+                        <span style={{ fontFamily: 'monospace', color: '#222' }}>{sessionData?.id}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontWeight: '500', color: '#666' }}>Status:</span>
+                        <span style={{ 
+                          color: sessionStatus === 'active' ? '#28a745' : sessionStatus === 'paused' ? '#ffc107' : '#dc3545',
+                          fontWeight: '500',
+                          textTransform: 'capitalize'
+                        }}>
+                          {sessionStatus}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontWeight: '500', color: '#666' }}>Connected Robots:</span>
+                        <span style={{ color: '#222', fontWeight: '500' }}>{Object.keys(robots).length}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontWeight: '500', color: '#666' }}>Classroom:</span>
+                        <span style={{ color: '#222' }}>{selectedClassroom?.name || 'None'}</span>
+                      </div>
+                    </div>
+                  </div> */}
                 </div>
               </div>
             )}
