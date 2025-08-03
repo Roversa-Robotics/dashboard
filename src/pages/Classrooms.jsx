@@ -26,6 +26,7 @@ function Classrooms() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [classroomToDelete, setClassroomToDelete] = useState(null);
   const [lessons, setLessons] = useState([]);
+  const [classroomSearch, setClassroomSearch] = useState('');
 
   // Predefined themes with gradient colors
   const themes = {
@@ -429,6 +430,32 @@ function Classrooms() {
         </div>
 
         <div className="classrooms-content">
+          {/* Search Bar */}
+          {classrooms.length > 0 && (
+            <div style={{ marginBottom: 24, display: 'flex', width: '45%' }}>
+              <div style={{ display: 'flex', alignItems: 'center', background: '#fff', borderRadius: 8, border: '1.5px solid #e0e0e0', boxShadow: '0 1px 4px rgba(65,105,225,0.04)', width: '100%', maxWidth: '100%' }}>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 20, height: 20, color: '#666', marginLeft: 14, marginRight: 8 }}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Search classrooms by name..."
+                  value={classroomSearch}
+                  onChange={e => setClassroomSearch(e.target.value)}
+                  style={{
+                    padding: '10px 16px',
+                    border: 'none',
+                    outline: 'none',
+                    fontSize: '1rem',
+                    width: '100%',
+                    background: 'transparent',
+                    color: '#222',
+                    borderRadius: 8
+                  }}
+                />
+              </div>
+            </div>
+          )}
           {classrooms.length === 0 ? (
             <div className="empty-state animate-on-mount-delay-2">
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="#b0b0b0" width="60" height="60">
@@ -442,7 +469,11 @@ function Classrooms() {
             </div>
           ) : (
             <div className="classrooms-grid">
-              {classrooms.map((classroom, index) => {
+              {classrooms
+                .filter(classroom => 
+                  classroom.name.toLowerCase().includes(classroomSearch.toLowerCase())
+                )
+                .map((classroom, index) => {
                 const handleMenuClick = (e) => {
                   e.stopPropagation();
                   setMenuOpenId(menuOpenId === classroom.id ? null : classroom.id);
@@ -509,6 +540,27 @@ function Classrooms() {
                   </div>
                 );
               })}
+              {classrooms.filter(classroom => 
+                classroom.name.toLowerCase().includes(classroomSearch.toLowerCase())
+              ).length === 0 && classroomSearch && (
+                <div className="empty-state animate-on-mount-delay-2" style={{ 
+                  gridColumn: '1 / -1', 
+                  textAlign: 'center', 
+                  padding: 40,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '100%'
+                }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="#b0b0b0" width="70" height="70" style={{ marginBottom: 0 }}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2" />
+                    <circle cx="12" cy="12" r="9" stroke="#b0b0b0" strokeWidth="1.5" fill="none" />
+                  </svg>
+                  <h3 style={{ color: '#888', fontWeight: 500, margin: '12px 0 8px 0' }}>No Classrooms Found</h3>
+                  <p style={{ color: '#bbb', margin: 0 }}>Try using a different query...</p>
+                </div>
+              )}
             </div>
           )}
         </div>
