@@ -135,18 +135,35 @@ function Dashboard() {
     // Load user profile name from Firestore
     const loadUserName = async (user) => {
       if (!user) return;
-      try {
-        const profileRef = doc(db, 'users', user.uid, 'profile');
-        const profileSnap = await getDoc(profileRef);
-        if (profileSnap.exists()) {
-          const profile = profileSnap.data();
-          console.log('Profile loaded:', profile);
-          if (profile.name && profile.name.trim() !== '') {
-            setUserName(profile.name);
-            return;
+      
+      // Try multiple times with delays to ensure profile is loaded
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const profileRef = doc(db, 'users', user.uid);
+          const profileSnap = await getDoc(profileRef);
+          
+          if (profileSnap.exists()) {
+            const profile = profileSnap.data();
+            
+            if (profile.name && profile.name.trim() !== '') {
+              setUserName(profile.name);
+              return;
+            }
+          }
+          
+          // Wait before retry (except on last attempt)
+          if (attempt < 2) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+        } catch (e) {
+          console.error('Error loading profile:', e);
+          if (attempt < 2) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
           }
         }
-      } catch (e) {}
+      }
+      
+      // Fallback to email if profile still not available
       setUserName(user.email?.split('@')[0] || 'User');
     };
     const unsubscribe = auth.onAuthStateChanged((user) => {

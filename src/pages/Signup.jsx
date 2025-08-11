@@ -6,7 +6,7 @@ import { auth } from '../Firebase.jsx';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useEffect } from 'react';
 import { db } from '../Firebase.jsx';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import logo from '../Official_Logo_White.png';
 
 function Signup() {
@@ -23,14 +23,17 @@ function Signup() {
     try
     {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      
       // Store user profile in Firestore
-      await setDoc(doc(db, 'users', userCredential.user.uid, 'profile'), { name, email });
-      console.log('Profile written:', { name, email });
-      await new Promise(res => setTimeout(res, 1000)); // 1 second delay
+      await setDoc(doc(db, 'users', userCredential.user.uid), { name, email });
+      
+      // Wait a bit before navigation
+      await new Promise(res => setTimeout(res, 1000));
       navigate('/dashboard');
     }
     catch(error)
     {
+      console.error('Signup error:', error);
       setMessage(error.message);
     }
   };
