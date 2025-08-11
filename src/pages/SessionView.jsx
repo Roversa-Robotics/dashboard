@@ -265,7 +265,9 @@ function SessionView() {
   // NEW: Get classroom by ID
   const getClassroomById = (classroomId) => {
     if (!classroomId) return null;
-    return classrooms.find(c => c.id === classroomId);
+    const classroom = classrooms.find(c => String(c.id) === String(classroomId));
+    console.log('getClassroomById:', { classroomId, classrooms: classrooms.length, found: classroom });
+    return classroom;
   };
 
   // NEW: Toggle section minimization
@@ -280,27 +282,88 @@ function SessionView() {
   const handleClassroomChange = async (newClassroomId) => {
     if (!sessionData) return;
     
-    // Clear all robot assignments when classroom changes
-    const updatedRobots = {};
-    Object.keys(robots).forEach(deviceId => {
-      updatedRobots[deviceId] = {
-        ...robots[deviceId],
-        assignedTo: null,
-        assignedToType: null,
-        assignedToName: null
-      };
-    });
+    // Handle the "no-classroom" special case
+    if (newClassroomId === 'no-classroom') {
+      newClassroomId = null;
+    }
     
-    setRobots(updatedRobots);
+    // Check if there's an actual change
+    const currentClassroomId = sessionData.classroomId;
+    const hasActualClassroomChange = currentClassroomId !== newClassroomId;
+    
+    // Store the new classroom selection without immediately applying it
     setSelectedClassroom(newClassroomId ? getClassroomById(newClassroomId) : null);
-    setHasUnsavedChanges(true);
     
-    // Update session data with new classroom
-    const updatedSessionData = {
-      ...sessionData,
-      classroomId: newClassroomId || null
-    };
-    setSessionData(updatedSessionData);
+    // Only set hasUnsavedChanges if there's an actual change
+    if (hasActualClassroomChange) {
+      setHasUnsavedChanges(true);
+      
+      // Update session data with new classroom (but don't clear robots yet)
+      const updatedSessionData = {
+        ...sessionData,
+        classroomId: newClassroomId || null
+      };
+      setSessionData(updatedSessionData);
+    }
+  };
+
+  // NEW: Apply classroom change and save session
+  const applyClassroomChange = async () => {
+    if (!sessionData || !user) return;
+    
+    try {
+      // Clear all robot assignments when classroom changes
+      const updatedRobots = {};
+      Object.keys(robots).forEach(deviceId => {
+        updatedRobots[deviceId] = {
+          ...robots[deviceId],
+          assignedTo: null,
+          assignedToType: null,
+          assignedToName: null
+        };
+      });
+      
+      setRobots(updatedRobots);
+      
+      // Save the session with the new classroom and cleared robots
+      const savedSessions = await loadSessions(user);
+      const sessionIndex = savedSessions.findIndex(s => String(s.id) === String(sessionId));
+      
+      if (sessionIndex !== -1) {
+        const updatedSession = {
+          ...savedSessions[sessionIndex],
+          classroomId: selectedClassroom?.id || null,
+          robots: updatedRobots
+        };
+        
+        savedSessions[sessionIndex] = updatedSession;
+        await saveSessions(user, savedSessions);
+        
+        // Update session data
+        setSessionData(updatedSession);
+        
+        // Update lastSavedState to reflect the new state
+        const newLastSavedState = {
+          robots: updatedRobots,
+          receivedData: receivedData,
+          sessionName: sessionName,
+          completedRobots: completedRobots,
+          sessionNotes: sessionNotes,
+          classroomId: selectedClassroom?.id || null
+        };
+        setLastSavedState(newLastSavedState);
+        
+        // Reset the selectedClassroom to clear the dropdown
+        setSelectedClassroom(null);
+        
+        // Clear the unsaved changes flag
+        setHasUnsavedChanges(false);
+        
+        console.log('Classroom change applied successfully');
+      }
+    } catch (error) {
+      console.error('Error applying classroom change:', error);
+    }
   };
 
   // NEW: Clear all robot assignments
@@ -355,6 +418,11 @@ function SessionView() {
       if (!savedCompletedArray.includes(robotId)) return true;
     }
     
+    // Compare classroom ID
+    const currentClassroomId = sessionData?.classroomId;
+    const savedClassroomId = lastSavedState.classroomId;
+    if (currentClassroomId !== savedClassroomId) return true;
+    
     return false;
   };
 
@@ -362,7 +430,7 @@ function SessionView() {
   useEffect(() => {
     const hasChanges = hasActualChanges();
     setHasUnsavedChanges(hasChanges);
-  }, [robots, receivedData, sessionName, completedRobots, sessionNotes]);
+  }, [robots, receivedData, sessionName, completedRobots, sessionNotes, sessionData]);
 
 
   // Only load session data on first mount
@@ -392,8 +460,11 @@ function SessionView() {
             sessionName: found.name,
             sessionNotes: found.sessionNotes || '',
             completedRobots: new Set(found.completedRobots || []),
-            lessonCompletions: found.lessonCompletions ? Object.fromEntries(Object.entries(found.lessonCompletions).map(([k, v]) => [k, new Set(v)])) : {}
+            lessonCompletions: found.lessonCompletions ? Object.fromEntries(Object.entries(found.lessonCompletions).map(([k, v]) => [k, new Set(v)])) : {},
+            classroomId: found.classroomId || null
           });
+          
+          // Don't initialize selectedClassroom - let it start as null to show "Select Classroom..."
         } else {
           setIsLoadingSession(false);
           setSessionLoadError('Session not found.');
@@ -418,16 +489,9 @@ function SessionView() {
     return () => unsubscribe();
   }, []);
 
-  // NEW: Set classroom after classrooms are loaded
-  useEffect(() => {
-    if (sessionData && sessionData.classroomId && classrooms.length > 0) {
-      const classroom = getClassroomById(sessionData.classroomId);
-      setSelectedClassroom(classroom);
-    }
-  }, [sessionData, classrooms]);
+  // Don't automatically set selectedClassroom - let it start as null
 
   // Function to handle leaving the session view
-  // Returns a promise that resolves when disconnect is complete
   const handleLeaveSession = useCallback(async () => {
     try {
       // Only save if session is active and sessionData exists
@@ -1058,15 +1122,25 @@ function SessionView() {
       }
       
       // If session has a classroom, use classroom-specific lessons
-      if (sessionData && sessionData.classroomId && selectedClassroom) {
-        const classroomLessons = selectedClassroom.lessons || [];
-        const classroomLessonIds = classroomLessons.map(l => l.id);
-        
-        // Filter loaded lessons to only include classroom lessons
-        const filteredLessons = loaded.filter(l => classroomLessonIds.includes(l.id));
-        
-        // Only include lessons that are specifically assigned to the classroom
-        setLessons([{ id: 'none', name: 'None' }, ...filteredLessons]);
+      if (sessionData && sessionData.classroomId) {
+        const classroom = getClassroomById(sessionData.classroomId);
+        if (classroom) {
+          const classroomLessons = classroom.lessons || [];
+          const classroomLessonIds = classroomLessons.map(l => l.id);
+          
+          // Filter loaded lessons to only include classroom lessons
+          const filteredLessons = loaded.filter(l => classroomLessonIds.includes(l.id));
+          
+          // Only include lessons that are specifically assigned to the classroom
+          setLessons([{ id: 'none', name: 'None' }, ...filteredLessons]);
+        } else {
+          // Classroom not found, use all lessons
+          const merged = [...DEFAULT_LESSONS];
+          loaded.forEach(l => {
+            if (!merged.some(def => def.id === l.id)) merged.push(l);
+          });
+          setLessons([{ id: 'none', name: 'None' }, ...merged]);
+        }
       } else {
         // Use all lessons if no classroom is associated
         const merged = [...DEFAULT_LESSONS];
@@ -1077,7 +1151,7 @@ function SessionView() {
       }
     });
     return () => unsubscribe();
-  }, [sessionData, selectedClassroom]);
+  }, [sessionData]);
 
   // Update session data when robots or received data changes
   useEffect(() => {
@@ -1410,8 +1484,11 @@ function SessionView() {
 
   // NEW: Robot assignment functions
   const assignRobotToStudent = async (deviceId, studentId) => {
-    if (!selectedClassroom) return;
-    const student = selectedClassroom.students.find(s => s.id === studentId);
+    if (!sessionData?.classroomId) return;
+    const classroom = getClassroomById(sessionData.classroomId);
+    if (!classroom) return;
+    
+    const student = classroom.students.find(s => s.id === studentId);
     if (!student) return;
     const updatedRobots = {
       ...robots,
@@ -1447,8 +1524,11 @@ function SessionView() {
   };
 
   const assignRobotToGroup = async (deviceId, groupId) => {
-    if (!selectedClassroom) return;
-    const group = selectedClassroom.groups.find(g => g.id === groupId);
+    if (!sessionData?.classroomId) return;
+    const classroom = getClassroomById(sessionData.classroomId);
+    if (!classroom) return;
+    
+    const group = classroom.groups.find(g => g.id === groupId);
     if (!group) return;
     const updatedRobots = {
       ...robots,
@@ -2149,7 +2229,7 @@ function SessionView() {
                       
                       {/* Edit Tags button */}
                       {sessionData && sessionData.classroomId && (
-                        selectedClassroom ? (
+                        getClassroomById(sessionData.classroomId) ? (
                           <button
                             onClick={e => {
                               e.stopPropagation();
@@ -4101,12 +4181,12 @@ useEffect(() => {
                       Classroom
                     </h3>
                     <p style={{ 
-                      marginBottom: '16px', 
                       color: '#666', 
-                      fontSize: '14px',
+                      fontSize: '14px', 
+                      marginBottom: '20px',
                       lineHeight: '1.5'
                     }}>
-                      Change the classroom associated with this session. When you change the classroom, <strong>all robot assignments will be cleared.</strong>
+                      Change the classroom associated with this session. When you apply the change, <strong>all robot assignments will be cleared.</strong> Select a new classroom and click "Apply Classroom Change" to confirm.
                     </p>
                     
                     <div style={{ marginBottom: '16px' }}>
@@ -4117,17 +4197,17 @@ useEffect(() => {
                         color: '#333' 
                       }}>
                       </label>
-                      {selectedClassroom ? (
+                      {sessionData?.classroomId ? (
                         <div style={{
                           display: 'inline-block',
                           padding: '8px 12px',
-                          backgroundColor: selectedClassroom.color || '#4169e1',
+                          backgroundColor: getClassroomById(sessionData.classroomId)?.color || '#4169e1',
                           color: '#fff',
                           borderRadius: '6px',
                           fontSize: '14px',
                           fontWeight: '500'
                         }}>
-                          Current Classroom: {selectedClassroom.name}
+                          Current Classroom: {getClassroomById(sessionData.classroomId)?.name}
                         </div>
                       ) : (
                         <div style={{
@@ -4154,7 +4234,7 @@ useEffect(() => {
                         Change to:
                       </label>
                       <select
-                        value={selectedClassroom?.id || ''}
+                        value={hasUnsavedChanges ? selectedClassroom?.id || '' : ''}
                         onChange={(e) => handleClassroomChange(e.target.value || null)}
                         style={{
                           width: '100%',
@@ -4167,7 +4247,8 @@ useEffect(() => {
                           fontFamily: 'Space Mono, monospace'
                         }}
                       >
-                        <option value="">No classroom</option>
+                        <option value="">{hasUnsavedChanges ? (selectedClassroom?.name || 'No classroom') : 'Select Classroom...'}</option>
+                        <option value="no-classroom">No classroom</option>
                         {classrooms.map(classroom => (
                           <option key={classroom.id} value={classroom.id}>
                             {classroom.name}
@@ -4176,6 +4257,28 @@ useEffect(() => {
                       </select>
                     </div>
                     
+                    {/* Apply button for classroom change */}
+                    <div style={{ marginTop: '12px' }}>
+                      <button
+                        onClick={applyClassroomChange}
+                        disabled={!hasUnsavedChanges}
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          border: 'none',
+                          borderRadius: '8px',
+                          fontSize: '14px',
+                          fontWeight: '600',
+                          cursor: hasUnsavedChanges ? 'pointer' : 'not-allowed',
+                          backgroundColor: hasUnsavedChanges ? '#4169e1' : '#e0e0e0',
+                          color: hasUnsavedChanges ? '#fff' : '#888',
+                          fontFamily: 'Space Mono, monospace',
+                          transition: 'all 0.2s ease'
+                        }}
+                      >
+                        {hasUnsavedChanges ? 'Apply Classroom Change' : 'No Changes to Apply'}
+                      </button>
+                    </div>
                   </div>
                   
                   {/* Session Information */}
@@ -4221,7 +4324,7 @@ useEffect(() => {
       </div>
 
       {/* NEW: Robot Assignment Modal */}
-      {showAssignmentModal && selectedRobotForAssignment && selectedClassroom && (
+      {showAssignmentModal && selectedRobotForAssignment && sessionData?.classroomId && (
         <div className="modal-overlay" onClick={() => setShowAssignmentModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px' }}>
             <div className="modal-header">
@@ -4248,11 +4351,12 @@ useEffect(() => {
                     padding: '8px 12px',
                     border: '1px solid #e0e0e0',
                     borderRadius: '6px',
-                    fontSize: '14px'
+                    fontSize: '14px',
+                    fontFamily: 'monospace'
                   }}
                 >
                   <option value="">Select a student...</option>
-                  {selectedClassroom.students.map(student => (
+                  {getClassroomById(sessionData.classroomId)?.students?.map(student => (
                     <option key={student.id} value={student.id}>
                       {student.name} ({student.email})
                     </option>
@@ -4275,11 +4379,12 @@ useEffect(() => {
                     padding: '8px 12px',
                     border: '1px solid #e0e0e0',
                     borderRadius: '6px',
-                    fontSize: '14px'
+                    fontSize: '14px',
+                    fontFamily: 'monospace'
                   }}
                 >
                   <option value="">Select a group...</option>
-                  {selectedClassroom.groups.map(group => (
+                  {getClassroomById(sessionData.classroomId)?.groups?.map(group => (
                     <option key={group.id} value={group.id}>
                       {group.name} ({group.students.length} students)
                     </option>
@@ -4289,24 +4394,31 @@ useEffect(() => {
 
               {robots[selectedRobotForAssignment]?.assignedTo && (
                 <div style={{ marginTop: '20px', padding: '12px', background: '#fff3cd', borderRadius: '6px', border: '1px solid #ffeaa7' }}>
-                  <h4 style={{ margin: '0 0 8px 0', color: '#856404' }}>Current Assignment</h4>
-                  <p style={{ margin: '0', color: '#856404' }}>
-                    Currently assigned to: {robots[selectedRobotForAssignment].assignedTo.name}
-                  </p>
+                  {/* <h4 style={{ margin: '0 0 8px 0', color: '#856404' }}>Current Assignment</h4> */}
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '16px', height: '16px', marginRight: '6px' }}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6Z" />
+                    </svg>
+                    <p style={{ margin: '0', color: '#856404' }}>
+                      Currently assigned to: {robots[selectedRobotForAssignment].assignedTo.name}
+                    </p>
+                  </div>
                   <button
                     onClick={() => {
                       unassignRobot(selectedRobotForAssignment);
                       setShowAssignmentModal(false);
                     }}
                     style={{
-                      marginTop: '8px',
                       background: '#dc3545',
                       color: 'white',
+                      marginLeft: 'auto',
                       border: 'none',
                       padding: '6px 12px',
                       borderRadius: '4px',
                       cursor: 'pointer',
-                      fontSize: '12px'
+                      fontSize: '12px',
+                      fontFamily: 'monospace'
                     }}
                   >
                     Unassign Robot
@@ -4324,7 +4436,7 @@ useEffect(() => {
       )}
 
       {/* NEW: Tag Modal */}
-      {showTagModal && selectedClassroom && (
+      {showTagModal && sessionData?.classroomId && (
         <div className="modal-overlay" onClick={() => setShowTagModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px' }}>
             <div className="modal-header">
@@ -4336,7 +4448,7 @@ useEffect(() => {
               </button>
             </div>
             <div className="modal-body">
-              {!selectedClassroom ? (
+              {!getClassroomById(sessionData.classroomId) ? (
                 <div style={{ color: '#dc3545', fontWeight: 500, padding: '24px 0', textAlign: 'center' }}>
                   Please select a classroom to tag robots.
                 </div>
@@ -4356,11 +4468,12 @@ useEffect(() => {
                         padding: '8px 12px',
                         border: '1px solid #e0e0e0',
                         borderRadius: '6px',
-                        fontSize: '14px'
+                        fontSize: '14px',
+                        fontFamily: 'monospace'
                       }}
                     >
                       <option value="">Select a student...</option>
-                      {selectedClassroom.students.map(student => (
+                      {getClassroomById(sessionData.classroomId)?.students?.map(student => (
                         <option key={student.id} value={student.id}>
                           {student.name} ({student.email})
                         </option>
@@ -4382,11 +4495,12 @@ useEffect(() => {
                         padding: '8px 12px',
                         border: '1px solid #e0e0e0',
                         borderRadius: '6px',
-                        fontSize: '14px'
+                        fontSize: '14px',
+                        fontFamily: 'monospace'
                       }}
                     >
                       <option value="">Select a group...</option>
-                      {selectedClassroom.groups.map(group => (
+                      {getClassroomById(sessionData.classroomId)?.groups?.map(group => (
                         <option key={group.id} value={group.id}>
                           {group.name} ({group.students.length} students)
                         </option>

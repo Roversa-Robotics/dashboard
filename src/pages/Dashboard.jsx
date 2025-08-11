@@ -220,49 +220,19 @@ function Dashboard() {
 
         {/* Main cards and Active Sessions grouped in the same container */}
         <div style={{ width: '100%' }}>
-          <div className="dashboard-cards-row" style={{ display: 'flex', gap: 24, marginBottom: 0, paddingBottom: 0 }}>
-            {/* My Sessions card */}
-            <div className="dashboard-card fade-in-scale animate-on-mount-delay-1" onClick={() => navigate('/sessions')} style={{ flex: '1 1 320px', minWidth: 250, maxWidth: 250 }}>
-              <img src={myrobots} alt="My Sessions" className="dashboard-card-bg" />
-              <div className="dashboard-card-content">
-                <div className="dashboard-card-title">My Sessions</div>
-                <div className="dashboard-card-desc">View and manage active sessions</div>
-              </div>
-            </div>
-            {/* My Classrooms card */}
-            <div className="dashboard-card fade-in-scale animate-on-mount-delay-3" onClick={() => navigate('/classrooms')} style={{ flex: '1 1 320px', minWidth: 250, maxWidth: 250 }}>
-              <img src={myclassrooms} alt="My Classrooms" className="dashboard-card-bg" />
-              <div className="dashboard-card-content">
-                <div className="dashboard-card-title">My Classrooms</div>
-                <div className="dashboard-card-desc">Manage your students and groups</div>
-              </div>
-            </div>
-            {/* Access Lessons card */}
-            <div className="dashboard-card fade-in-scale animate-on-mount-delay-4" onClick={() => navigate('/lessons')} style={{ flex: '1 1 320px', minWidth: 250, maxWidth: 250 }}>
-              <img src={accessguides} alt="My Lessons" className="dashboard-card-bg" />
-              <div className="dashboard-card-content">
-                <div className="dashboard-card-title">My Lessons</div>
-                <div className="dashboard-card-desc">View and manage lessons</div>
-              </div>
-            </div>
-            {/* Calendar card moved here */}
-            <div className="dashboard-calendar-card animate-on-mount-delay-5" style={{ minWidth: 220, maxWidth: 320, marginLeft: 12, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-              <DashboardCalendar sessions={[...activeSessions, ...pausedSessions, ...recentSessions]} />
-            </div>
-          </div>
-          {/* Combined Active Sessions and Recent Sessions in one row */}
-          <div style={{ display: 'flex', flexDirection: 'row', gap: 30, width: '100%', marginTop: 0, alignItems: 'flex-start' }}>
-            {/* Monitor Current Robot Activity Card (replaces Robots Needing Charging) */}
-            <div style={{ minWidth: 180, maxWidth: 240, marginLeft: 0, padding: 0, background: '#fff', border: '1.5px solid #e0e0e0', boxShadow: '0 1px 4px rgba(65,105,225,0.04)', borderRadius: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', overflow: 'hidden', marginTop: '-32px' }}>
+          {/* Calendar, Active Sessions, and Time to Charge in the same row */}
+          <div style={{ display: 'flex', flexDirection: 'row', gap: 30, width: '100%', marginBottom: 30, alignItems: 'flex-start' }}>
+            {/* Monitor Current Robot Activity Card (Time to Charge) */}
+            <div style={{ minWidth: 275, maxWidth: 320, marginLeft: 0, padding: 0, background: '#fff', border: '1.5px solid #e0e0e0', boxShadow: '0 1px 4px rgba(65,105,225,0.04)', borderRadius: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', overflow: 'hidden', height: 400 }}>
               <div style={{ width: '100%', background: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '18px 0 0 0', position: 'relative', minHeight: 120 }}>
                 {/* Pink design background */}
                 <img src={dashboardBatteryDesign} alt="Battery Design" style={{ position: 'absolute', top: -50, left: 0, width: '100%', height: 200, objectFit: 'cover', zIndex: 1, pointerEvents: 'none', borderTopLeftRadius: 20, borderTopRightRadius: 20 }} />
                 {/* Charging station image */}
-                <img src={chargingStationImg} alt="Charging Station" style={{ width: 170, height: 140, objectFit: 'cover', marginBottom: 10, zIndex: 400, position: 'relative' }} />
+                <img src={chargingStationImg} alt="Charging Station" style={{ width: 200, height: 190, objectFit: 'cover', marginBottom: 10, zIndex: 400, position: 'relative' }} />
               </div>
               <div style={{ padding: '0 14px 14px 14px', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                <h2 style={{ fontSize: '1.3rem', fontWeight: 700, color: '#222', margin: '12px 0 6px 0', fontFamily: 'Inter, sans-serif', textAlign: 'center' }}>Time to Charge?</h2>
-                <div style={{ color: '#555', fontSize: '0.80rem', fontFamily: 'Inter, sans-serif', fontWeight: 400, textAlign: 'center', marginBottom: 14, maxWidth: 200 }}>
+                <h2 style={{ fontSize: '1.7rem', fontWeight: 700, color: '#222', margin: '12px 0 6px 0', fontFamily: 'Inter, sans-serif', textAlign: 'center' }}>Time to Charge?</h2>
+                <div style={{ color: '#555', fontSize: '0.90rem', fontFamily: 'Inter, sans-serif', fontWeight: 400, textAlign: 'center', marginBottom: 14, maxWidth: 200 }}>
                   Monitor your robots' battery life while they're in use.
                 </div>
                 <button
@@ -289,11 +259,11 @@ function Dashboard() {
                 </button>
               </div>
             </div>
-            {/* Active Sessions section (right) */}
-            <div style={{ flex: 1, minWidth: 340, maxWidth: 520, marginTop: '-32px' }}>
-              <div className="dashboard-card active-sessions-section fade-in-scale animate-on-mount-delay-2" style={{ padding: 0, width: '100%', marginBottom: 8, marginTop: 0, display: 'flex', flexDirection: 'column', background: '#fff6fa', border: '2px solid #fff', borderRadius: 20 }}>
+            {/* Active Sessions section (middle) */}
+            <div style={{ flex: 1, minWidth: 340, maxWidth: 520, height: 400 }}>
+              <div className="dashboard-card active-sessions-section fade-in-scale animate-on-mount-delay-2" style={{ padding: 0, width: '100%', height: '400px', marginBottom: 8, marginTop: 0, display: 'flex', flexDirection: 'column', background: '#fff6fa', border: '2px solid #fff', borderRadius: 20 }}>
                 {/* Move title and description above session-list */}
-                <div style={{ padding: '22px 28px 0 28px', display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{ padding: '22px 28px 0 28px', display: 'flex', alignItems: 'center', gap: 14, height: 140, flexShrink: 0 }}>
                   <img src={excitedFlowerImg} alt="Excited Flower" style={{ width: 80, height: 105, marginRight: 8, marginBottom: 20, marginLeft: -10, flexShrink: 0 }} />
                   <div style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
                     <h2 style={{ fontSize: '2rem', fontWeight: 700, color: '#222', marginBottom: 6, fontFamily: 'Inter, sans-serif', textAlign: 'left' }}>Active Sessions</h2>
@@ -302,17 +272,18 @@ function Dashboard() {
                     </div>
                   </div>
                 </div>
-                <div className="session-list" style={{ padding: '0 28px 0 28px', width: '100%', marginTop: 6 }}>
+                <div className="session-list" style={{ padding: '0 28px 0 28px', width: '100%', marginTop: -30, height: 200 }}>
                   {[...activeSessions, ...pausedSessions].length > 0 ? (
-                    [...activeSessions, ...pausedSessions].map((session, index) => (
+                    [...activeSessions, ...pausedSessions].slice(0, 2).map((session, index) => (
                       <div
                         key={session.id}
                         className={`session-list-item ${session.status}-session`}
                         onClick={() => navigate(`/sessions/${session.id}`)}
                         style={{
                           position: 'relative',
-                          overflow: 'hidden',
-                          marginBottom: 10,
+                          overflow: 'visible',
+                          marginTop: 20,
+                          marginBottom: -20,
                           borderRadius: 8,
                           background: '#fff',
                           border: '1.5px solid #e0e0e0',
@@ -326,10 +297,11 @@ function Dashboard() {
                           minWidth: 0,
                           width: '100%',
                           boxSizing: 'border-box',
+                          minHeight: 60,
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 18, minWidth: 0 }}>
-                          <span className={`status-badge ${session.status}`} style={{ fontSize: 13, padding: '3px 12px', borderRadius: 5, marginRight: 8, marginLeft: 8, marginTop: 18, flexShrink: 0 }}>
+                          <span className={`status-badge ${session.status}`} style={{ fontSize: 13, padding: '3px 12px', borderRadius: 5, marginRight: 8, marginLeft: 8, marginTop: 16, flexShrink: 0, whiteSpace: 'nowrap' }}>
                             {session.status === 'active' ? 'Active' : session.status === 'paused' ? 'Paused' : session.status}
                           </span>
                           <span style={{ fontWeight: 700, fontSize: '1.18rem', color: '#222', fontFamily: 'Inter, sans-serif', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 220 }}>{session.name}</span>
@@ -348,8 +320,13 @@ function Dashboard() {
                       <p style={{ color: '#bbb', fontSize: 14 }}>Start or resume a session to see it here.</p>
                     </div>
                   )}
+                  {[...activeSessions, ...pausedSessions].length > 2 && (
+                    <div style={{ textAlign: 'center', padding: '20px 0', color: '#888', fontSize: '0.9rem', fontStyle: 'italic' }}>
+                      +{[...activeSessions, ...pausedSessions].length - 2} more sessions
+                    </div>
+                  )}
                 </div>
-                <div style={{ margin: '10px 28px 18px 0', textAlign: 'right' }}>
+                <div style={{ margin: '10px 28px 18px 0', textAlign: 'right', height: 60, flexShrink: 0 }}>
                   <button
                     style={{
                       background: '#ff7a1a',
@@ -376,17 +353,19 @@ function Dashboard() {
                 </div>
               </div>
             </div>
-            {/* Recent Sessions section (right) */}
-            <div className="dashboard-calendar-card animate-on-mount-delay-5" style={{ minWidth: 220, maxWidth: 320, marginTop: '20px', marginLeft: 20, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
-              {/* Only Recent Sessions below, calendar has moved above */}
-              <div className="recent-sessions-section" style={{ marginTop: 0 }}>
-                <h2 className="recent-sessions-title" style={{ fontSize: '1.5rem', fontWeight: 700, color: '#222', marginBottom: 6 }}>Recent Sessions</h2>
-                <div className="recent-sessions-subtitle" style={{ color: '#555', fontSize: '0.85rem', marginBottom: 24 }}>
+            {/* Calendar card on the right */}
+            <div className="dashboard-calendar-card animate-on-mount-delay-5" style={{ minWidth: 220, maxWidth: 320, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', position: 'relative' }}>
+              <DashboardCalendar sessions={[...activeSessions, ...pausedSessions, ...recentSessions]} />
+              
+              {/* Recent Sessions section positioned below the calendar */}
+              <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 20, zIndex: 10, width: '100%', minWidth: 220, maxWidth: 300 }}>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#222', marginBottom: 6, fontFamily: 'Inter, sans-serif', textAlign: 'left' }}>Recent Sessions</h3>
+                <div className="recent-sessions-subtitle" style={{ color: '#555', fontSize: '0.85rem', marginBottom: 24, fontFamily: 'Open Sans, sans-serif' }}>
                   View student progress on most recently assigned sessions
                 </div>
-                <div className="recent-sessions-list">
+                <div className="recent-sessions-list" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                   {recentSessions.length > 0 ? (
-                    recentSessions.map((session, index) => {
+                    recentSessions.slice(0, 3).map((session, index) => {
                       const block = session.block || session.blockName || (session.classroomBlock ? session.classroomBlock : null);
                       const dateObj = new Date(session.endedAt || session.createdAt);
                       const dateStr = dateObj.toLocaleDateString('en-GB', { day: '2-digit', month: 'long' });
@@ -424,8 +403,39 @@ function Dashboard() {
                       );
                     })
                   ) : (
-                    <div className="recent-session-item no-sessions animate-on-mount-delay-5">No recent sessions</div>
+                    <div className="recent-session-item no-sessions animate-on-mount-delay-5" style={{ color: '#888', fontSize: '1.1rem', fontStyle: 'italic', textAlign: 'center', padding: '20px 0' }}>No recent sessions</div>
                   )}
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Quick Access section moved below the main row */}
+          <div style={{ marginTop: 30, marginBottom: 20 }}>
+            <h2 style={{ fontSize: '2rem', fontWeight: 700, color: '#222', marginBottom: 20, fontFamily: 'Inter, sans-serif', textAlign: 'left' }}>Quick Access →</h2>
+            <div className="dashboard-cards-row" style={{ display: 'flex', gap: 24, paddingBottom: 0 }}>
+              {/* Meet Roversa Card */}
+              <div className="dashboard-card fade-in-scale animate-on-mount-delay-3" onClick={() => window.open('https://sites.google.com/roversa.com/roversa-classroom/meet-roversa', '_blank')} style={{ flex: '1 1 320px', minWidth: 250, maxWidth: 250 }}>
+                <img src={myclassrooms} alt="Meet Roversa" className="dashboard-card-bg" />
+                <div className="dashboard-card-content">
+                  <div className="dashboard-card-title">Meet Roversa</div>
+                  <div className="dashboard-card-desc">Get started and learn more about Roversa</div>
+                </div>
+              </div>
+              {/* Guides Card */}
+              <div className="dashboard-card fade-in-scale animate-on-mount-delay-1" onClick={() => window.open('https://sites.google.com/roversa.com/roversa-classroom/guides', '_blank')} style={{ flex: '1 1 320px', minWidth: 250, maxWidth: 250 }}>
+                <img src={myrobots} alt="Guides" className="dashboard-card-bg" />
+                <div className="dashboard-card-content">
+                  <div className="dashboard-card-title">User Guides</div>
+                  <div className="dashboard-card-desc">Find guides and technical documentation</div>
+                </div>
+              </div>
+              {/* Lesson Repo card */}
+              <div className="dashboard-card fade-in-scale animate-on-mount-delay-4" onClick={() => window.open('https://sites.google.com/roversa.com/roversa-classroom/lessons', '_blank')} style={{ flex: '1 1 320px', minWidth: 250, maxWidth: 250 }}>
+                <img src={accessguides} alt="Lessons" className="dashboard-card-bg" />
+                <div className="dashboard-card-content">
+                  <div className="dashboard-card-title">Lesson Repository</div>
+                  <div className="dashboard-card-desc">View all of Roversa's provided lessons</div>
                 </div>
               </div>
             </div>

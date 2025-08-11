@@ -27,6 +27,8 @@ function Classrooms() {
   const [classroomToDelete, setClassroomToDelete] = useState(null);
   const [lessons, setLessons] = useState([]);
   const [classroomSearch, setClassroomSearch] = useState('');
+  const [draggedClassroom, setDraggedClassroom] = useState(null);
+  const [dragOverClassroom, setDragOverClassroom] = useState(null);
 
   // Predefined themes with gradient colors
   const themes = {
@@ -140,6 +142,53 @@ function Classrooms() {
     if (!user) return;
     const docRef = doc(db, 'users', user.uid, 'appdata', 'classrooms');
     await setDoc(docRef, { classrooms });
+  };
+
+  // Drag and drop handlers for reordering classrooms
+  const handleDragStart = (e, classroom) => {
+    setDraggedClassroom(classroom);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/html', ''); // Required for Firefox
+  };
+
+  const handleDragOver = (e, classroom) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (draggedClassroom && draggedClassroom.id !== classroom.id) {
+      setDragOverClassroom(classroom);
+    }
+  };
+
+  const handleDragLeave = (e) => {
+    setDragOverClassroom(null);
+  };
+
+  const handleDrop = async (e, targetClassroom) => {
+    e.preventDefault();
+    if (!draggedClassroom || draggedClassroom.id === targetClassroom.id) {
+      setDraggedClassroom(null);
+      setDragOverClassroom(null);
+      return;
+    }
+
+    // Reorder classrooms
+    const draggedIndex = classrooms.findIndex(c => c.id === draggedClassroom.id);
+    const targetIndex = classrooms.findIndex(c => c.id === targetClassroom.id);
+    
+    const reorderedClassrooms = [...classrooms];
+    const [movedClassroom] = reorderedClassrooms.splice(draggedIndex, 1);
+    reorderedClassrooms.splice(targetIndex, 0, movedClassroom);
+    
+    setClassrooms(reorderedClassrooms);
+    await saveClassrooms(user, reorderedClassrooms);
+    
+    setDraggedClassroom(null);
+    setDragOverClassroom(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedClassroom(null);
+    setDragOverClassroom(null);
   };
 
   // Helper to load lessons from Firestore
@@ -491,9 +540,20 @@ function Classrooms() {
                 return (
                   <div 
                     key={classroom.id} 
-                    className={`classroom-card fade-in-scale animate-on-mount-delay-${2 + index}`} 
+                    className={`classroom-card fade-in-scale animate-on-mount-delay-${2 + index} ${draggedClassroom?.id === classroom.id ? 'dragging' : ''} ${dragOverClassroom?.id === classroom.id ? 'drag-over' : ''}`} 
                     onClick={() => setSelectedClassroom(classroom)} 
-                    style={{ cursor: 'pointer', position: 'relative' }}
+                    style={{ 
+                      cursor: 'pointer', 
+                      position: 'relative',
+                      opacity: draggedClassroom?.id === classroom.id ? 0.5 : 1,
+                      transform: draggedClassroom?.id === classroom.id ? 'rotate(5deg)' : 'none'
+                    }}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, classroom)}
+                    onDragOver={(e) => handleDragOver(e, classroom)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, classroom)}
+                    onDragEnd={handleDragEnd}
                   >
                     <div className="classroom-card-header-bar" style={{
                       background: `${themes[Object.keys(themes).find(key => themes[key].primary === classroom.color) || 'blue']?.primary}`,
