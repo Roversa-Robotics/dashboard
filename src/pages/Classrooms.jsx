@@ -512,9 +512,9 @@ function Classrooms() {
               </svg>
               <h3>No Classrooms Yet</h3>
               <p>Create your first classroom to start managing students and groups</p>
-              <button className="create-first-btn fade-in-scale animate-on-mount-delay-3" onClick={() => setShowCreateModal(true)}>
+              {/* <button className="create-first-btn fade-in-scale animate-on-mount-delay-3" onClick={() => setShowCreateModal(true)}>
                 Create Your First Classroom
-              </button>
+              </button> */}
             </div>
           ) : (
             <div className="classrooms-grid">

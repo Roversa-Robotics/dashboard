@@ -332,7 +332,7 @@ function Dashboard() {
                       </div>
                     ))
                   ) : (
-                    <div className="session-list-item session-card-empty animate-on-mount-delay-2" style={{ textAlign: 'center', padding: 40, color: '#888', fontFamily: 'inherit' }}>
+                    <div className="session-list-item session-card-empty animate-on-mount-delay-2" style={{ textAlign: 'center', padding: 40, color: '#888', fontFamily: 'inherit', background: 'transparent', border: 'none', boxShadow: 'none' }}>
                       <h3 style={{ color: '#888', fontWeight: 500, fontSize: '1.1rem' }}>No Active or Paused Sessions</h3>
                       <p style={{ color: '#bbb', fontSize: 14 }}>Start or resume a session to see it here.</p>
                     </div>
