@@ -813,6 +813,7 @@ function SessionView() {
     return initial;
   });
   const [activeLessonTab, setActiveLessonTab] = useState('none');
+  const [loadedLessons, setLoadedLessons] = useState([]);
 
   // If lessons change (e.g. user adds a lesson in another tab), update completions map
   useEffect(() => {
@@ -1121,37 +1122,45 @@ function SessionView() {
         }));
       }
       
-      // If session has a classroom, use classroom-specific lessons
-      if (sessionData && sessionData.classroomId) {
-        const classroom = getClassroomById(sessionData.classroomId);
-        if (classroom) {
-          const classroomLessons = classroom.lessons || [];
-          const classroomLessonIds = classroomLessons.map(l => l.id);
-          
-          // Filter loaded lessons to only include classroom lessons
-          const filteredLessons = loaded.filter(l => classroomLessonIds.includes(l.id));
-          
-          // Only include lessons that are specifically assigned to the classroom
-          setLessons([{ id: 'none', name: 'None' }, ...filteredLessons]);
-        } else {
-          // Classroom not found, use all lessons
-          const merged = [...DEFAULT_LESSONS];
-          loaded.forEach(l => {
-            if (!merged.some(def => def.id === l.id)) merged.push(l);
-          });
-          setLessons([{ id: 'none', name: 'None' }, ...merged]);
-        }
+      // Store loaded lessons for later filtering
+      setLoadedLessons(loaded);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Filter lessons based on sessionData and classrooms
+  useEffect(() => {
+    if (!loadedLessons) return;
+    
+    // If session has a classroom, use classroom-specific lessons
+    if (sessionData && sessionData.classroomId) {
+      const classroom = getClassroomById(sessionData.classroomId);
+      if (classroom) {
+        const classroomLessons = classroom.lessons || [];
+        const classroomLessonIds = classroomLessons.map(l => l.id);
+        
+        // Filter loaded lessons to only include classroom lessons
+        const filteredLessons = loadedLessons.filter(l => classroomLessonIds.includes(l.id));
+        
+        // Only include lessons that are specifically assigned to the classroom
+        setLessons([{ id: 'none', name: 'None' }, ...filteredLessons]);
       } else {
-        // Use all lessons if no classroom is associated
+        // Classroom not found, use all lessons
         const merged = [...DEFAULT_LESSONS];
-        loaded.forEach(l => {
+        loadedLessons.forEach(l => {
           if (!merged.some(def => def.id === l.id)) merged.push(l);
         });
         setLessons([{ id: 'none', name: 'None' }, ...merged]);
       }
-    });
-    return () => unsubscribe();
-  }, [sessionData]);
+    } else {
+      // Use all lessons if no classroom is associated
+      const merged = [...DEFAULT_LESSONS];
+      loadedLessons.forEach(l => {
+        if (!merged.some(def => def.id === l.id)) merged.push(l);
+      });
+      setLessons([{ id: 'none', name: 'None' }, ...merged]);
+    }
+  }, [sessionData, classrooms, loadedLessons]);
 
   // Update session data when robots or received data changes
   useEffect(() => {
