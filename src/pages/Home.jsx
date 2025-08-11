@@ -38,7 +38,7 @@ function Home() {
       <div className="home-content slide-in-from-bottom">
         <div className="hero-section">
           <div className="hero-content">
-            <h1 className="animate-on-mount-delay-2">Welcome to Roversa Dashboard</h1>
+            <h1 className="animate-on-mount-delay-2">Welcome to the Roversa Dashboard</h1>
             <div className="hero-buttons">
               <button className="secondary-btn fade-in-scale animate-on-mount-delay-3" onClick={() => navigate('/login')}>
                 Sign In

@@ -420,7 +420,7 @@ function Dashboard() {
                       );
                     })
                   ) : (
-                    <div className="recent-session-item no-sessions animate-on-mount-delay-5" style={{ color: '#888', fontSize: '1.1rem', fontStyle: 'italic', textAlign: 'center', padding: '20px 0' }}>No recent sessions</div>
+                    <div className="recent-session-item no-sessions animate-on-mount-delay-5" style={{ color: '#888', fontSize: '1rem', textAlign: 'center', padding: '20px 0', fontFamily: 'monospace' }}>No recent sessions</div>
                   )}
                 </div>
               </div>
