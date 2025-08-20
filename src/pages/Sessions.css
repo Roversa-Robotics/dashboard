@@ -1,5 +1,6 @@
 /* --- Global Theme Overhaul: Clean White & Blue --- */
 /* Font system is now handled by fonts.css */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
 
 body {
     background: #f7f9fb;
@@ -7,15 +8,15 @@ body {
 }
 
 .sidebar {
-    background: #4169e1;
+    background: #124EAF;
     color: #fff;
     min-width: 220px;
-    box-shadow: 2px 0 12px rgba(65,105,225,0.07);
+    box-shadow: 2px 0 12px rgba(18,78,175,0.07);
 }
 
 .sidebar .nav-item.active, .sidebar .nav-item:hover {
     background: #fff;
-    color: #4169e1;
+    color: #124EAF;
     border-radius: 8px;
     font-weight: 700;
 }
@@ -55,7 +56,7 @@ h3 {
 .card, .session-info, .modal {
     background: #fff;
     border-radius: 18px;
-    box-shadow: 0 4px 24px rgba(65,105,225,0.08);
+    box-shadow: 0 4px 24px rgba(18,78,175,0.08);
     padding: 36px 32px 28px 32px;
     margin-bottom: 32px;
     border: none;
@@ -72,8 +73,8 @@ h3 {
     border: 1.5px solid #e0e0e0;
 }
 .card:hover {
-    box-shadow: 0 8px 32px rgba(65,105,225,0.13);
-    border-color: #4169e1;
+    box-shadow: 0 8px 32px rgba(18,78,175,0.13);
+    border-color: #124EAF;
 }
 
 /* --- Buttons --- */
@@ -91,7 +92,7 @@ button, .session-btn, .create-btn, .cancel-btn, .clear-data-btn, .connection-btn
 }
 
 .create-btn, .session-btn, .connection-btn.connect {
-    background: #4169e1;
+    background: #124EAF;
     color: #fff;
     border: none;
 }
@@ -105,8 +106,8 @@ button, .session-btn, .create-btn, .cancel-btn, .clear-data-btn, .connection-btn
 
 .cancel-btn, .clear-data-btn, .connection-btn.disconnect {
     background: #fff;
-    color: #4169e1;
-    border: 1.5px solid #4169e1;
+    color: #124EAF;
+    border: 1.5px solid #124EAF;
 }
 .cancel-btn:hover, .clear-data-btn:hover, .connection-btn.disconnect:hover {
     background: #f7f9fb;
@@ -123,12 +124,12 @@ input, select, .session-name-input {
     transition: border-color 0.2s;
 }
 input:focus, select:focus, .session-name-input:focus {
-    border-color: #4169e1;
+    border-color: #124EAF;
     outline: none;
 }
 
 .input-group label {
-    color: #4169e1;
+    color: #124EAF;
     font-weight: 600;
     margin-bottom: 8px;
 }
@@ -139,7 +140,7 @@ input:focus, select:focus, .session-name-input:focus {
     max-width: 98vw;
     position: relative;
     border-radius: 20px;
-    box-shadow: 0 8px 32px rgba(65,105,225,0.13);
+    box-shadow: 0 8px 32px rgba(18,78,175,0.13);
     padding: 36px 32px 28px 32px;
 }
 .modal h2 {
@@ -166,7 +167,7 @@ input:focus, select:focus, .session-name-input:focus {
 }
 
 .status-badge.active {
-    background: #4169e1;
+    background: #124EAF;
     color: #fff;
 }
 .status-badge.stopped {
@@ -237,12 +238,12 @@ input:focus, select:focus, .session-name-input:focus {
 }
 
 .card:hover {
-    box-shadow: 0 4px 12px rgba(65, 105, 225, 0.10);
+    box-shadow: 0 4px 12px rgba(18, 78, 175, 0.10);
 }
 
 .active-session {
     background-color: transparent;
-    border-left: 4px solid #4169e1;
+    border-left: 4px solid #124EAF;
 }
 
 .quick-access h2, .session-header h2 {
@@ -288,11 +289,11 @@ input:focus, select:focus, .session-name-input:focus {
 .input-group input:focus,
 .input-group select:focus {
     background-color: transparent;
-    border-color: #4169e1;
+    border-color: #124EAF;
 }
 
 .status-badge.active {
-    background-color: #4169e1;
+    background-color: #124EAF;
     color: #fff;
 }
 
@@ -303,7 +304,7 @@ input:focus, select:focus, .session-name-input:focus {
 
 .session-btn {
     background-color: transparent;
-    background: #4169e1;
+    background: #124EAF;
     color: #fff;
 }
 
@@ -335,7 +336,7 @@ input:focus, select:focus, .session-name-input:focus {
 }
 
 .create-session-btn {
-    background: #4169e1;
+    background: #124EAF;
     color: white;
     border: none;
     padding: 12px 28px;
@@ -344,7 +345,7 @@ input:focus, select:focus, .session-name-input:focus {
     font-size: 14px;
     cursor: pointer;
     transition: all 0.2s ease;
-    box-shadow: 0 2px 8px rgba(65, 105, 225, 0.07);
+    box-shadow: 0 2px 8px rgba(18, 78, 175, 0.07);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -352,7 +353,7 @@ input:focus, select:focus, .session-name-input:focus {
 
 .create-session-btn:hover {
     background: #274bb5;
-    box-shadow: 0 4px 16px rgba(65, 105, 225, 0.13);
+    box-shadow: 0 4px 16px rgba(18, 78, 175, 0.13);
     transform: translateY(-2px);
 }
 
@@ -576,7 +577,7 @@ input:focus, select:focus, .session-name-input:focus {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(65, 105, 225, 0.18); /* royal blue tint, semi-transparent */
+    background: rgba(18, 78, 175, 0.18); /* royal blue tint, semi-transparent */
     z-index: 1000;
     display: flex;
     align-items: center;
@@ -588,7 +589,7 @@ input:focus, select:focus, .session-name-input:focus {
     background-color: #ffffff;
     color: #222222;
     border: 1px solid #e0e0e0;
-    box-shadow: 0 4px 12px rgba(65, 105, 225, 0.10);
+    box-shadow: 0 4px 12px rgba(18, 78, 175, 0.10);
 }
 
 .modal h2 {
@@ -689,7 +690,7 @@ input:focus, select:focus, .session-name-input:focus {
     height: 200px;
     background: #fff;
     border-radius: 12px;
-    box-shadow: 0 2px 12px rgba(65, 105, 225, 0.08);
+    box-shadow: 0 2px 12px rgba(18, 78, 175, 0.08);
     border: 2px solid #e0e0e0;
     padding: 20px;
     transition: box-shadow 0.2s, border-color 0.2s, transform 0.2s;
@@ -698,14 +699,14 @@ input:focus, select:focus, .session-name-input:focus {
 }
 
 .robot-card:hover {
-    border-color: #4169e1;
-    box-shadow: 0 4px 16px rgba(65, 105, 225, 0.13);
+    border-color: #124EAF;
+    box-shadow: 0 4px 16px rgba(18, 78, 175, 0.13);
     transform: translateY(-2px);
 }
 
 .robot-card.selected {
-    border-color: #4169e1;
-    box-shadow: 0 4px 16px rgba(65, 105, 225, 0.13);
+    border-color: #124EAF;
+    box-shadow: 0 4px 16px rgba(18, 78, 175, 0.13);
     border-width: 3px;
 }
 
@@ -990,7 +991,7 @@ input:focus, select:focus, .session-name-input:focus {
 
 .session-name-input:focus {
     outline: none;
-    border-bottom-color: #4169e1;
+    border-bottom-color: #124EAF;
 }
 
 /* --- Modern Card & Layout Enhancements for Session View --- */
@@ -998,12 +999,12 @@ input:focus, select:focus, .session-name-input:focus {
     background: #f7f9fb;
     padding: 0 16px;
     border-radius: 18px;
-    box-shadow: 0 2px 12px rgba(65, 105, 225, 0.04);
+    box-shadow: 0 2px 12px rgba(18, 78, 175, 0.04);
 }
 
 .session-info {
     margin-bottom: 32px;
-    box-shadow: 0 4px 24px rgba(65, 105, 225, 0.07);
+    box-shadow: 0 4px 24px rgba(18, 78, 175, 0.07);
     border-radius: 14px;
     border: none;
     background: #fff;
@@ -1046,7 +1047,7 @@ button, .session-btn, .clear-data-btn, .connection-btn {
 }
 
 button:focus, .session-btn:focus, .clear-data-btn:focus, .connection-btn:focus {
-    box-shadow: 0 0 0 2px #4169e1aa;
+    box-shadow: 0 0 0 2px #124EAFaa;
 }
 
 .session-btn, .clear-data-btn, .connection-btn {
@@ -1082,7 +1083,7 @@ button:focus, .session-btn:focus, .clear-data-btn:focus, .connection-btn:focus {
 }
 
 .connection-btn.connect {
-    background: #4169e1;
+    background: #124EAF;
     color: #fff;
 }
 
@@ -1104,7 +1105,7 @@ button:focus, .session-btn:focus, .clear-data-btn:focus, .connection-btn:focus {
 }
 
 .session-name-input:focus {
-    border-bottom-color: #4169e1;
+    border-bottom-color: #124EAF;
     outline: none;
 }
 
@@ -1125,7 +1126,7 @@ button:focus, .session-btn:focus, .clear-data-btn:focus, .connection-btn:focus {
     height: 200px;
     background: #fff;
     border-radius: 12px;
-    box-shadow: 0 2px 12px rgba(65, 105, 225, 0.08);
+    box-shadow: 0 2px 12px rgba(18, 78, 175, 0.08);
     border: 2px solid #e0e0e0;
     padding: 20px;
     transition: box-shadow 0.2s, border-color 0.2s, transform 0.2s;
@@ -1134,14 +1135,14 @@ button:focus, .session-btn:focus, .clear-data-btn:focus, .connection-btn:focus {
 }
 
 .robot-card:hover {
-    border-color: #4169e1;
-    box-shadow: 0 4px 16px rgba(65, 105, 225, 0.13);
+    border-color: #124EAF;
+    box-shadow: 0 4px 16px rgba(18, 78, 175, 0.13);
     transform: translateY(-2px);
 }
 
 .robot-card.selected {
-    border-color: #4169e1;
-    box-shadow: 0 4px 16px rgba(65, 105, 225, 0.13);
+    border-color: #124EAF;
+    box-shadow: 0 4px 16px rgba(18, 78, 175, 0.13);
     border-width: 3px;
 }
 
@@ -1241,7 +1242,7 @@ button:focus, .session-btn:focus, .clear-data-btn:focus, .connection-btn:focus {
     font-family: monospace;
     font-size: 0.98rem;
     border-bottom: none;
-    box-shadow: 0 1px 2px rgba(65, 105, 225, 0.03);
+    box-shadow: 0 1px 2px rgba(18, 78, 175, 0.03);
 }
 
 .data-item .timestamp {
@@ -1277,7 +1278,7 @@ button:focus, .session-btn:focus, .clear-data-btn:focus, .connection-btn:focus {
 .session-section {
     background: #fff;
     border-radius: 18px;
-    box-shadow: 0 4px 24px rgba(65, 105, 225, 0.08);
+    box-shadow: 0 4px 24px rgba(18, 78, 175, 0.08);
     border: 1.5px solid #e0e0e0;
     padding: 32px 32px 24px 32px;
     margin-bottom: 24px;
@@ -1285,8 +1286,8 @@ button:focus, .session-btn:focus, .clear-data-btn:focus, .connection-btn:focus {
 }
 
 .session-section:hover {
-    box-shadow: 0 8px 32px rgba(65, 105, 225, 0.13);
-    border-color: #4169e1;
+    box-shadow: 0 8px 32px rgba(18, 78, 175, 0.13);
+    border-color: #124EAF;
 }
 
 .section-header {
@@ -1329,7 +1330,7 @@ button:focus, .session-btn:focus, .clear-data-btn:focus, .connection-btn:focus {
 
 .session-info {
     margin-bottom: 24px;
-    box-shadow: 0 4px 24px rgba(65, 105, 225, 0.08);
+    box-shadow: 0 4px 24px rgba(18, 78, 175, 0.08);
     border-radius: 18px;
     border: none;
     background: #fff;
@@ -1338,8 +1339,8 @@ button:focus, .session-btn:focus, .clear-data-btn:focus, .connection-btn:focus {
 }
 
 .session-info:hover {
-    box-shadow: 0 8px 32px rgba(65, 105, 225, 0.13);
-    border-color: #4169e1;
+    box-shadow: 0 8px 32px rgba(18, 78, 175, 0.13);
+    border-color: #124EAF;
 }
 
 @media (max-width: 900px) {
@@ -1424,20 +1425,20 @@ button:focus, .session-btn:focus, .clear-data-btn:focus, .connection-btn:focus {
 }
 
 .connection-btn.connect {
-    background: #4169e1;
+    background: #124EAF;
     color: #fff;
     border: none;
 }
 
 .connection-btn.disconnect {
     background: #fff;
-    color: #4169e1;
-    border: 1.5px solid #4169e1;
+    color: #124EAF;
+    border: 1.5px solid #124EAF;
 }
 
 .connection-btn:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(65, 105, 225, 0.2);
+    box-shadow: 0 4px 12px rgba(18, 78, 175, 0.2);
 }
 
 .connection-btn.connect:hover {
@@ -1465,15 +1466,15 @@ button:focus, .session-btn:focus, .clear-data-btn:focus, .connection-btn:focus {
 }
 
 .session-name-input:hover {
-    border-bottom-color: #4169e1;
+    border-bottom-color: #124EAF;
     cursor: text;
     outline: none;
 }
 
 .session-name-input:focus {
-    border-bottom-color: #4169e1;
+    border-bottom-color: #124EAF;
     outline: none;
-    background-color: rgba(65, 105, 225, 0.05);
+    background-color: rgba(18, 78, 175, 0.05);
 }
 
 .session-name-input:disabled {
@@ -1494,7 +1495,7 @@ button:focus, .session-btn:focus, .clear-data-btn:focus, .connection-btn:focus {
 }
 
 .status-badge.active {
-    background: #4169e1;
+    background: #124EAF;
     color: #fff;
 }
 
@@ -1542,7 +1543,7 @@ button:focus, .session-btn:focus, .clear-data-btn:focus, .connection-btn:focus {
 }
 
 .session-btn.save-btn {
-    background: #4169e1;
+    background: #124EAF;
     color: #fff;
 }
 
@@ -1568,7 +1569,7 @@ button:focus, .session-btn:focus, .clear-data-btn:focus, .connection-btn:focus {
 
 .session-btn:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(65, 105, 225, 0.2);
+    box-shadow: 0 4px 12px rgba(18, 78, 175, 0.2);
 }
 
 .session-btn.save-btn:hover {
@@ -1601,8 +1602,8 @@ button:focus, .session-btn:focus, .clear-data-btn:focus, .connection-btn:focus {
 /* --- Clear Data Button --- */
 .clear-data-btn {
     background: #fff;
-    color: #4169e1;
-    border: 1.5px solid #4169e1;
+    color: #124EAF;
+    border: 1.5px solid #124EAF;
     padding: 8px 16px;
     border-radius: 6px;
     cursor: pointer;
@@ -1616,7 +1617,7 @@ button:focus, .session-btn:focus, .clear-data-btn:focus, .connection-btn:focus {
 .clear-data-btn:hover {
     background: #f7f9fb;
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(65, 105, 225, 0.15);
+    box-shadow: 0 2px 8px rgba(18, 78, 175, 0.15);
 }
 
 /* --- Data Container Redesign --- */
@@ -1626,14 +1627,14 @@ button:focus, .session-btn:focus, .clear-data-btn:focus, .connection-btn:focus {
     padding: 20px;
     border: 1.5px solid #e0e0e0;
     margin-bottom: 16px;
-    box-shadow: 0 2px 8px rgba(65, 105, 225, 0.04);
+    box-shadow: 0 2px 8px rgba(18, 78, 175, 0.04);
     max-height: 400px;
     overflow-y: auto;
 }
 
 .data-container:hover {
-    border-color: #4169e1;
-    box-shadow: 0 4px 16px rgba(65, 105, 225, 0.08);
+    border-color: #124EAF;
+    box-shadow: 0 4px 16px rgba(18, 78, 175, 0.08);
 }
 
 .data-item {
@@ -1647,7 +1648,7 @@ button:focus, .session-btn:focus, .clear-data-btn:focus, .connection-btn:focus {
     font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
     font-size: 13px;
     border: none;
-    box-shadow: 0 1px 3px rgba(65, 105, 225, 0.05);
+    box-shadow: 0 1px 3px rgba(18, 78, 175, 0.05);
     transition: background 0.2s ease;
 }
 
@@ -1723,7 +1724,7 @@ button:focus, .session-btn:focus, .clear-data-btn:focus, .connection-btn:focus {
 .back-btn {
     background: transparent;
     border: none;
-    color: #4169e1;
+    color: #124EAF;
     font-size: 14px;
     font-weight: 600;
     letter-spacing: 0.5px;
@@ -1777,7 +1778,7 @@ button:focus, .session-btn:focus, .clear-data-btn:focus, .connection-btn:focus {
 .session-header .session-name-input:focus,
 .session-name-input:hover,
 .session-name-input:focus {
-  border-bottom-color: #4169e1 !important;
+  border-bottom-color: #124EAF !important;
   background: transparent !important;
   outline: none !important;
   box-shadow: none !important;
@@ -1803,7 +1804,7 @@ button:focus, .session-btn:focus, .clear-data-btn:focus, .connection-btn:focus {
 .session-list-item {
   background: #fff;
   border-radius: 14px;
-  box-shadow: 0 1px 6px rgba(65, 105, 225, 0.04);
+  box-shadow: 0 1px 6px rgba(18, 78, 175, 0.04);
   border: 1px solid #e0e0e0;
   padding: 28px 40px;
   margin-bottom: 12px;
@@ -1813,7 +1814,7 @@ button:focus, .session-btn:focus, .clear-data-btn:focus, .connection-btn:focus {
 
 .session-list-item:not(.session-card-empty):hover {
   border-color: #b3c6f7;
-  box-shadow: 0 4px 16px rgba(65, 105, 225, 0.09);
+  box-shadow: 0 4px 16px rgba(18, 78, 175, 0.09);
   transform: translateY(-2px) scale(1.01);
 }
 
@@ -1890,7 +1891,7 @@ button:focus, .session-btn:focus, .clear-data-btn:focus, .connection-btn:focus {
 .session-list-item {
   background: #fff;
   border-radius: 14px;
-  box-shadow: 0 1px 6px rgba(65, 105, 225, 0.04);
+  box-shadow: 0 1px 6px rgba(18, 78, 175, 0.04);
   border: 1px solid #e0e0e0;
   padding: 28px 40px;
   margin-bottom: 12px;
@@ -1900,7 +1901,7 @@ button:focus, .session-btn:focus, .clear-data-btn:focus, .connection-btn:focus {
 
 .session-list-item:not(.session-card-empty):hover {
   border-color: #b3c6f7;
-  box-shadow: 0 4px 16px rgba(65, 105, 225, 0.09);
+  box-shadow: 0 4px 16px rgba(18, 78, 175, 0.09);
   transform: translateY(-2px) scale(1.01);
 }
 
@@ -1985,7 +1986,7 @@ body, .dashboard-container {
   margin: 0 auto;
   background: #fff;
   border-radius: 22px;
-  box-shadow: 0 8px 32px rgba(65,105,225,0.07);
+  box-shadow: 0 8px 32px rgba(18, 78, 175, 0.07);
   padding: 48px 40px 48px 40px;
 }
 
@@ -1997,7 +1998,7 @@ body, .dashboard-container {
   padding: 36px 32px 28px 32px;
   background: #fff;
   border-radius: 18px;
-  box-shadow: 0 2px 12px rgba(65, 105, 225, 0.08);
+  box-shadow: 0 2px 12px rgba(18, 78, 175, 0.08);
   border: 1.5px solid #e0e0e0;
   transition: box-shadow 0.18s, border-color 0.18s, transform 0.18s;
   cursor: pointer;
@@ -2012,12 +2013,12 @@ body, .dashboard-container {
   z-index: 10;
   padding: 8px 48px;
   border-radius: 0 0 16px 0;
-  box-shadow: 0 2px 8px rgba(65, 105, 225, 0.10);
+  box-shadow: 0 2px 8px rgba(18, 78, 175, 0.10);
   font-size: 13px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
-  background: #4169e1;
+  background: #124EAF;
   color: #fff;
   border: none;
 }
@@ -2032,8 +2033,8 @@ body, .dashboard-container {
 }
 
 .session-list-item:not(.session-card-empty):hover {
-  border-color: #4169e1;
-  box-shadow: 0 8px 32px rgba(65, 105, 225, 0.13);
+  border-color: #124EAF;
+  box-shadow: 0 8px 32px rgba(18, 78, 175, 0.13);
   transform: translateY(-2px) scale(1.01);
 }
 
@@ -2053,7 +2054,7 @@ body, .dashboard-container {
 .top-bar {
   background: #fff;
   border-radius: 18px;
-  box-shadow: 0 2px 12px rgba(65, 105, 225, 0.08);
+  box-shadow: 0 2px 12px rgba(18, 78, 175, 0.08);
   padding: 32px 40px 24px 40px;
   margin-bottom: 36px;
   display: flex;
@@ -2062,7 +2063,10 @@ body, .dashboard-container {
 }
 
 .create-session-btn {
-  background: #4169e1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #124EAF;
   color: white;
   border: none;
   padding: 12px 28px;
@@ -2071,38 +2075,82 @@ body, .dashboard-container {
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(65, 105, 225, 0.07);
-  display: flex;
-  align-items: center;
-  gap: 8px;
+  box-shadow: 0 2px 8px rgba(18, 78, 175, 0.07);
 }
+
 .create-session-btn:hover {
   background: #274bb5;
-  box-shadow: 0 4px 16px rgba(65, 105, 225, 0.13);
+  box-shadow: 0 4px 16px rgba(18, 78, 175, 0.13);
   transform: translateY(-2px);
 }
 
-@media (max-width: 900px) {
-  .sessions-content, .top-bar {
-    padding: 12px 4px;
-    border-radius: 10px;
-  }
-  .session-list-item {
-    padding: 14px 8px;
-    border-radius: 10px;
-  }
-  .quick-access h2 {
-    font-size: 1.1rem;
-    margin-top: 18px;
-    margin-bottom: 12px;
-  }
+.sessions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 32px;
+  margin-top: 24px;
+}
+
+.session-card {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 4px 16px rgba(18, 78, 175, 0.10);
+  overflow: visible;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 240px;
+  transition: box-shadow 0.2s, border-color 0.2s, transform 0.2s;
+  z-index: 1;
+  border: 1.5px solid transparent;
+}
+
+.session-card:hover {
+  box-shadow: 0 12px 32px rgba(18, 78, 175, 0.18);
+  border-color: #124EAF;
+  z-index: 10;
+}
+
+.session-card-header-bar {
+  border-top-left-radius: 18px;
+  border-top-right-radius: 18px;
+  height: 120px;
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+  z-index: 100;
+  background: linear-gradient(135deg, #124EAF 0%, #2741a5 100%);
+}
+
+.session-card-avatar {
+  position: absolute;
+  left: 50%;
+  top: calc(120px - 40px);
+  transform: translateX(-50%);
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(18, 78, 175, 0.15);
+  z-index: 9999;
+  border: 5px solid #fff;
+  background-clip: padding-box;
+  font-size: 32px;
+  pointer-events: auto;
 } 
 
-.btn-primary, .btn-secondary, .modal-footer button {
-  font-family: 'Space Mono', monospace !important;
-} 
+/* Force override for create session button */
+button.create-session-btn.fade-in-scale.animate-on-mount-delay-1 {
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 16px !important;
+}
 
-.lesson-details-title {
-  font-family: 'Sniglet', serif !important;
-  font-weight: 500 !important;
+/* Force override for empty state text */
+.session-list-item.session-card-empty p {
+  font-family: 'Inter', sans-serif !important;
 } 

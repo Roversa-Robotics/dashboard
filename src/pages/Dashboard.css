@@ -20,7 +20,7 @@ body {
 /* Sidebar Styles */
 .sidebar {
     width: 280px;
-    background-color: #4169e1;
+    background-color: #124EAF;
     color: #ffffff;
     padding: 20px;
     display: flex;
@@ -81,7 +81,7 @@ body {
 .nav-item:hover {
     background-color: #2741a5;
     transform: translateX(5px);
-    box-shadow: 0 2px 4px rgba(65, 105, 225, 0.08);
+    box-shadow: 0 2px 4px rgba(18, 78, 175, 0.08);
 }
 
 .nav-item span {
@@ -209,7 +209,7 @@ body {
 .sign-out {
     background-color: transparent;
     border: none;
-    color: #4169e1;
+    color: #124EAF;
     cursor: pointer;
     font-weight: 300;
     letter-spacing: 2px;
@@ -224,7 +224,7 @@ body {
     background-color: #e3eafe;
     color: #2741a5;
     transform: translateY(-2px);
-    box-shadow: 0 2px 4px rgba(65, 105, 225, 0.08);
+    box-shadow: 0 2px 4px rgba(18, 78, 175, 0.08);
 }
 
 .quick-access {
@@ -270,7 +270,7 @@ body {
 .button {
     font-size: 20px;
     font-family: 'Montserrat', sans-serif; 
-    color: #4169e1;
+    color: #124EAF;
     background-color: transparent;
     border: transparent;
     position: relative;
@@ -286,7 +286,7 @@ body {
     left: 0;
     height: 1px;
     width: 0%;
-    background-color: #4169e1;
+    background-color: #124EAF;
     transition: width 0.3s ease;
 }
 
@@ -367,7 +367,7 @@ body {
     height: 320px;
     border-radius: 18px;
     overflow: hidden;
-    box-shadow: 0 2px 12px rgba(65, 105, 225, 0.08);
+    box-shadow: 0 2px 12px rgba(18, 78, 175, 0.08);
     background: #fff;
     cursor: pointer;
     transition: transform 0.15s, box-shadow 0.15s;
@@ -505,13 +505,13 @@ body {
 }
 
 .dashboard-welcome span:hover {
-    color: #4169e1;
-    border-bottom-color: #4169e1;
+    color: #124EAF;
+    border-bottom-color: #124EAF;
 }
 
 .dashboard-welcome input {
     background: transparent;
-    border: 2px solid #4169e1;
+    border: 2px solid #124EAF;
     border-radius: 6px;
     padding: 4px 8px;
     font-family: 'Bevan', serif;
@@ -524,7 +524,7 @@ body {
 }
 
 .dashboard-welcome input:focus {
-    box-shadow: 0 0 0 3px rgba(65, 105, 225, 0.1);
+    box-shadow: 0 0 0 3px rgba(18, 78, 175, 0.1);
     background: rgba(255, 255, 255, 0.9);
 }
 
@@ -559,7 +559,7 @@ body {
 .recent-session-card {
   background: #fff;
   border-radius: 16px;
-  box-shadow: 0 2px 12px rgba(65, 105, 225, 0.08);
+  box-shadow: 0 2px 12px rgba(18, 78, 175, 0.08);
   padding: 22px 22px 16px 22px;
   margin-bottom: 0;
   cursor: pointer;
@@ -569,7 +569,7 @@ body {
   flex-direction: column;
 }
 .recent-session-card:hover {
-  box-shadow: 0 4px 16px rgba(65, 105, 225, 0.13);
+  box-shadow: 0 4px 16px rgba(18, 78, 175, 0.13);
   transform: translateY(-2px) scale(1.01);
 }
 .recent-session-card-main {

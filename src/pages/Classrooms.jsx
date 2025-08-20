@@ -18,7 +18,7 @@ function Classrooms() {
   const [newStudentName, setNewStudentName] = useState('');
   const [newGroupName, setNewGroupName] = useState('');
   const [newStudentEmail, setNewStudentEmail] = useState('');
-  const [selectedColor, setSelectedColor] = useState('#4169e1');
+  const [selectedColor, setSelectedColor] = useState('#124EAF');
   const [selectedTheme, setSelectedTheme] = useState('blue'); // Theme selection instead of slider
   const [dragOverGroupId, setDragOverGroupId] = useState(null); // For visual feedback
   const [menuOpenId, setMenuOpenId] = useState(null);
@@ -34,7 +34,7 @@ function Classrooms() {
   const themes = {
     blue: {
       name: 'Blue',
-      primary: '#4169e1',
+      primary: '#124EAF',
       dark: '#4f7ad6', // less dark
       light: '#6b8cff'
     },
@@ -280,7 +280,7 @@ function Classrooms() {
     setClassrooms(updatedClassrooms);
     setShowCreateModal(false);
     setNewClassroomName('');
-    setSelectedColor('#4169e1');
+    setSelectedColor('#124EAF');
     setSelectedTheme('blue'); // Reset to blue theme
   };
 
@@ -460,8 +460,8 @@ function Classrooms() {
       <div className="main-content slide-in-from-bottom">
         <div className="top-bar slide-in-from-top" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, marginBottom: 32 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <h1 style={{ margin: 0, fontSize: '2rem', fontWeight: 700, color: '#222' }}>Classrooms</h1>
-            <span style={{ 
+            <h1 style={{ margin: 0, fontSize: '2rem', fontWeight: 700, color: '#222', letterSpacing: '0.08em' }}>Classrooms</h1>
+            <span className="subtitle-text" style={{ 
               fontSize: '0.9rem', 
               color: '#666', 
               fontWeight: '400',
@@ -510,7 +510,7 @@ function Classrooms() {
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="#b0b0b0" width="60" height="60">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
               </svg>
-              <h3>No Classrooms Yet</h3>
+              <h3>No Classrooms Yet...</h3>
               <p>Create your first classroom to start managing students and groups</p>
               {/* <button className="create-first-btn fade-in-scale animate-on-mount-delay-3" onClick={() => setShowCreateModal(true)}>
                 Create Your First Classroom
@@ -582,7 +582,7 @@ function Classrooms() {
                       </div>
                     )}
                     <span className="classroom-card-avatar" style={{
-                      background: classroom.color || '#4169e1',
+                      background: classroom.color || '#124EAF',
                       border: '4px solid #fff',
                     }}>
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="28" height="28">
@@ -673,11 +673,11 @@ function Classrooms() {
               </button>
               <button className="btn-primary"
                 style={{
-                  background: newClassroomName.trim() ? '#4169e1' : '#e0e0e0',
-                  borderColor: newClassroomName.trim() ? '#4169e1' : '#e0e0e0',
+                  background: newClassroomName.trim() ? '#124EAF' : '#e0e0e0',
+                  borderColor: newClassroomName.trim() ? '#124EAF' : '#e0e0e0',
                   color: newClassroomName.trim() ? '#fff' : '#b0b0b0',
                   cursor: newClassroomName.trim() ? 'pointer' : 'not-allowed',
-                  fontFamily: 'Space Mono, monospace'
+                  fontFamily: 'Inter, sans-serif'
                 }}
                 onClick={handleCreateClassroom}
                 disabled={!newClassroomName.trim()}
@@ -701,7 +701,7 @@ function Classrooms() {
                   onChange={handleClassroomNameChange}
                   onKeyDown={handleClassroomNameKeyDown}
                   className="classroom-name-input"
-                  onFocus={(e) => e.target.style.borderColor = '#4169e1'}
+                  onFocus={(e) => e.target.style.borderColor = '#124EAF'}
                   onBlur={(e) => {
                     e.target.style.borderColor = '#e0e0e0';
                     saveClassroomName();

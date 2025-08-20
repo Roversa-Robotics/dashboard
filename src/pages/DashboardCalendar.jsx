@@ -240,7 +240,7 @@ export default function DashboardCalendar({ sessions = [] }) {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 16, width: '100%' }}>
                   {sessionsForDay.map(session => (
                     <div key={session.id} style={{ background: '#f7f8fa', borderRadius: 10, padding: '12px 18px', border: '1px solid #e0e0e0', display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      <div style={{ fontWeight: 700, color: '#4169e1', fontSize: 15 }}>{session.name}</div>
+                      <div style={{ fontWeight: 700, color: '#124EAF', fontSize: 15 }}>{session.name}</div>
                       <div style={{ color: '#888', fontWeight: 400, fontSize: 13 }}>{session.status.charAt(0).toUpperCase() + session.status.slice(1)}</div>
                       <div style={{ color: '#555', fontWeight: 400, fontSize: 12 }}>{session.block || session.blockName || session.classroomBlock || ''}</div>
                     </div>

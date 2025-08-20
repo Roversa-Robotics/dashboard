@@ -199,17 +199,17 @@ function Sessions() {
       <div className="main-content slide-in-from-bottom">
         <div className="top-bar slide-in-from-top" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 24, marginBottom: 32 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-            <h1 style={{ margin: 0, fontSize: '2rem', fontWeight: 700, color: '#222' }}>Sessions</h1>
+            <h1 style={{ margin: 0, fontSize: '2rem', fontWeight: 700, color: '#222', letterSpacing: '0.08em' }}>Sessions</h1>
             <span style={{ 
               fontSize: '0.9rem', 
               color: '#666', 
               fontWeight: '400',
-              fontFamily: 'Space Mono, monospace'
+              fontFamily: 'Inter, sans-serif'
             }}>
               Create a session for your classroom to monitor student progress and activity
             </span>
           </div>
-          <button className="create-session-btn fade-in-scale animate-on-mount-delay-1" style={{ display: 'flex', alignItems: 'center', gap: 8 }} onClick={() => setShowCreateModal(true)}>
+          <button className="create-session-btn fade-in-scale animate-on-mount-delay-1" style={{ display: 'flex', alignItems: 'center', gap: 8, fontFamily: 'Inter, sans-serif', fontWeight: 700 }} onClick={() => setShowCreateModal(true)}>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" width="20" height="20">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
@@ -237,7 +237,8 @@ function Sessions() {
                   width: '100%',
                   background: 'transparent',
                   color: '#222',
-                  borderRadius: 8
+                  borderRadius: 8,
+                  fontFamily: 'Space Mono, monospace'
                 }}
               />
             </div>
@@ -263,7 +264,7 @@ function Sessions() {
                       {session.classroomId && (
                         <span className="classroom-badge" style={{ 
                           background: '#e3eafe', 
-                          color: '#4169e1', 
+                          color: '#124EAF', 
                           padding: '4px 8px', 
                           borderRadius: '4px', 
                           fontSize: '12px', 
@@ -302,7 +303,7 @@ function Sessions() {
                     <circle cx="12" cy="12" r="9" stroke="#b0b0b0" strokeWidth="1.5" fill="none" />
                   </svg>
                   <h3 style={{ color: '#888', fontWeight: 500 }}>No Sessions</h3>
-                  <p style={{ color: '#bbb' }}>Start a new session to begin</p>
+                  <p style={{ color: '#bbb', fontFamily: 'Inter, sans-serif' }}>Start a new session to begin</p>
                 </div>
               )
             )}
@@ -339,6 +340,9 @@ function Sessions() {
                   onChange={(e) => setSessionName(e.target.value)}
                   placeholder="Enter session name"
                   onKeyPress={(e) => e.key === 'Enter' && sessionName.trim() && handleCreateSession()}
+                  style={{
+                    fontFamily: 'Space Mono, monospace'
+                  }}
                 />
               </div>
               <div className="form-group">
@@ -365,11 +369,11 @@ function Sessions() {
               </button>
               <button className="btn-primary"
                 style={{
-                  background: sessionName.trim() ? '#4169e1' : '#e0e0e0',
-                  borderColor: sessionName.trim() ? '#4169e1' : '#e0e0e0',
+                  background: sessionName.trim() ? '#124EAF' : '#e0e0e0',
+                  borderColor: sessionName.trim() ? '#124EAF' : '#e0e0e0',
                   color: sessionName.trim() ? '#fff' : '#b0b0b0',
                   cursor: sessionName.trim() ? 'pointer' : 'not-allowed',
-                  fontFamily: 'Space Mono, monospace'
+                  fontFamily: 'Inter, sans-serif'
                 }}
                 onClick={handleCreateSession}
                 disabled={!sessionName.trim()}

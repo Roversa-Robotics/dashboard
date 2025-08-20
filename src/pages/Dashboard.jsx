@@ -211,7 +211,7 @@ function Dashboard() {
                     return (
                       <div key={sessionId + '-' + deviceId} className="robot-card" style={{ width: 320, minHeight: 70, background: '#fff', borderRadius: 12, boxShadow: '0 2px 12px rgba(65, 105, 225, 0.08)', border: '2px solid #e0e0e0', padding: '16px 20px', display: 'flex', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', position: 'relative', textAlign: 'left', gap: 8 }}>
                         <div className="robot-card-info" style={{ width: '70%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 2 }}>
-                          <div style={{ fontWeight: 700, color: '#4169e1', fontSize: 16, marginBottom: 2, letterSpacing: 0.5 }}>{deviceId}</div>
+                          <div style={{ fontWeight: 700, color: '#124EAF', fontSize: 16, marginBottom: 2, letterSpacing: 0.5 }}>{deviceId}</div>
                           <div style={{ color: '#555', fontWeight: 500, fontSize: 13, marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{assignment}</div>
                           <div style={{ color: '#888', fontWeight: 400, fontSize: 12, marginBottom: 2, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{sessionName}</div>
                         </div>

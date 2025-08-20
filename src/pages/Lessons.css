@@ -1,0 +1,98 @@
+/* Lessons Page Font Overrides */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bevan&display=swap');
+
+/* Force override for create lesson button */
+button.create-classroom-btn {
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 700 !important;
+  font-size: 16px !important;
+}
+
+/* Force override for lesson details title */
+.lesson-details-title {
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 700 !important;
+}
+
+/* Force override for lesson overview and grade levels text */
+.session-view-content div[style*='fontSize: 16px'] {
+  font-family: 'Inter', sans-serif !important;
+}
+
+/* Force override for lesson assignment button */
+button[style*='background: #6f42c1'] {
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 600 !important;
+}
+
+/* More specific override for Assign to Classroom button */
+.session-view-content button[style*='background: #6f42c1'] {
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 600 !important;
+}
+
+/* Even more specific override for Assign to Classroom button */
+.session-view-content button[onClick*='openClassroomAssignmentModal'] {
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 600 !important;
+}
+
+/* Most specific override to override fonts.css global rule */
+.session-view-content button[onClick*='openClassroomAssignmentModal'][style*='background: #6f42c1'] {
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 600 !important;
+}
+
+/* Target the specific class with maximum specificity */
+.session-view-content button.assign-classroom-btn {
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 600 !important;
+}
+
+/* Even more specific with multiple selectors */
+.session-view-content button.assign-classroom-btn[style*='background: #6f42c1'] {
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 600 !important;
+}
+
+/* Force override for lesson tab text */
+button[style*='padding: 16px 18px'] {
+  font-family: 'Inter', sans-serif !important;
+}
+
+/* Force override for lesson tab active state */
+button.active[style*='background: #f0f4ff'] {
+  font-family: 'Inter', sans-serif !important;
+}
+
+/* Force override for "No lessons found" text */
+.session-view-content div[style*='color: #888'] {
+  font-family: 'Inter', sans-serif !important;
+}
+
+/* Force override for lesson tab buttons with specific padding */
+.session-view-content button[style*='padding: 16px 18px'] {
+  font-family: 'Inter', sans-serif !important;
+}
+
+/* Force override for lesson tab active state with specific background */
+.session-view-content button.active[style*='background: #f0f4ff'] {
+  font-family: 'Inter', sans-serif !important;
+}
+
+/* Force override for lesson tab text with specific font weight */
+.session-view-content button[style*='fontWeight: 700'] {
+  font-family: 'Inter', sans-serif !important;
+}
+
+/* Force override for "No lesson selected" text */
+.session-view-content div[style*='No lesson selected'] {
+  font-family: 'Inter', sans-serif !important;
+}
+
+/* Force override for "View Lesson" button */
+.session-view-content a[style*='display: inline-block'] {
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 600 !important;
+} 

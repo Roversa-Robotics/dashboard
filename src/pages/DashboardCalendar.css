@@ -1,7 +1,9 @@
+/* Dashboard Calendar Styles */
+
 .dashboard-calendar-card {
   background: #fff;
   border-radius: 18px;
-  box-shadow: 0 2px 12px rgba(65, 105, 225, 0.08);
+  box-shadow: 0 2px 12px rgba(18, 78, 175, 0.08);
   padding: 8px 8px 0 8px;
   width: 260px;
   display: flex;
@@ -57,7 +59,7 @@
   height: 20px;
 }
 .calendar-arrow:hover {
-  color: #4169e1;
+  color: #124EAF;
 }
 .calendar-subtitle {
   font-size: 0.85rem;
@@ -165,7 +167,7 @@
 .calendar-day-today {
   background: #e3eafe !important;
   border-radius: 50%;
-  color: #4169e1 !important;
+  color: #124EAF !important;
   font-weight: 700;
-  box-shadow: 0 2px 8px rgba(65,105,225,0.08);
+  box-shadow: 0 2px 8px rgba(18, 78, 175, 0.08);
 } 

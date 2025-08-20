@@ -1895,7 +1895,7 @@ function SessionView() {
                   boxShadow: lessonCompletions[selectedLessonId]?.has(robot.deviceId) 
                     ? '0 4px 20px rgba(65, 105, 225, 0.15)' 
                     : '0 2px 12px rgba(65, 105, 225, 0.08)',
-                  border: selectedRobotsForTagging.has(robot.deviceId) ? '2px solid #4169e1' : '2px solid #e0e0e0',
+                  border: selectedRobotsForTagging.has(robot.deviceId) ? '2px solid #124EAF' : '2px solid #e0e0e0',
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                   cursor: 'pointer',
                   position: 'relative',
@@ -2071,8 +2071,8 @@ function SessionView() {
                       userSelect: 'none',
                       width: '28px',
                       height: '28px',
-                      border: selectedRobotsForTagging.has(robot.deviceId) ? '2px solid #4169e1' : '2px solid #e0e0e0',
-                      backgroundColor: selectedRobotsForTagging.has(robot.deviceId) ? '#4169e1' : 'transparent',
+                      border: selectedRobotsForTagging.has(robot.deviceId) ? '2px solid #124EAF' : '2px solid #e0e0e0',
+                      backgroundColor: selectedRobotsForTagging.has(robot.deviceId) ? '#124EAF' : 'transparent',
                       transition: 'all 0.2s ease'
                     }}
                   >
@@ -2102,7 +2102,7 @@ function SessionView() {
                         onClick={e => e.stopPropagation()}
                         style={{
                           fontWeight: lessonCompletions[selectedLessonId]?.has(robot.deviceId) ? '600' : '500',
-                          color: lessonCompletions[selectedLessonId]?.has(robot.deviceId) ? '#4169e1' : '#222',
+                          color: lessonCompletions[selectedLessonId]?.has(robot.deviceId) ? '#124EAF' : '#222',
                           transition: 'all 0.3s ease',
                           minHeight: '22px',
                           display: 'inline-flex',
@@ -2121,9 +2121,9 @@ function SessionView() {
                           background: lessonCompletions[selectedLessonId]?.has(robot.deviceId) ? '#e3eafe' : '#f8f9fa',
                           borderRadius: '12px',
                           fontSize: '12px',
-                          color: lessonCompletions[selectedLessonId]?.has(robot.deviceId) ? '#4169e1' : '#666',
+                          color: lessonCompletions[selectedLessonId]?.has(robot.deviceId) ? '#124EAF' : '#666',
                           fontWeight: '500',
-                          border: selectedRobotsForTagging.has(robot.deviceId) ? '1px solid #4169e1' : '1px solid #e0e0e0',
+                          border: selectedRobotsForTagging.has(robot.deviceId) ? '1px solid #124EAF' : '1px solid #e0e0e0',
                           boxSizing: 'border-box',
                           boxShadow: lessonCompletions[selectedLessonId]?.has(robot.deviceId)
                             ? '0 2px 8px rgba(39, 75, 181, 0.08)'
@@ -2151,7 +2151,7 @@ function SessionView() {
                             style={{
                               background: 'none',
                               border: 'none',
-                              color: lessonCompletions[selectedLessonId]?.has(robot.deviceId) ? '#4169e1' : '#888',
+                              color: lessonCompletions[selectedLessonId]?.has(robot.deviceId) ? '#124EAF' : '#888',
                               fontWeight: 'bold',
                               fontSize: '14px',
                               cursor: 'pointer',
@@ -2210,7 +2210,7 @@ function SessionView() {
                           }}
                           style={{
                             padding: '6px 12px',
-                            background: lessonCompletions[selectedLessonId]?.has(robot.deviceId) ? '#274bb5' : '#4169e1',
+                            background: lessonCompletions[selectedLessonId]?.has(robot.deviceId) ? '#274bb5' : '#124EAF',
                             border: 'none',
                             borderRadius: '6px',
                             cursor: 'pointer',
@@ -2352,7 +2352,7 @@ function SessionView() {
                             <span style={{ 
                               fontSize: '0.75rem', 
                               fontWeight: '600', 
-                              color: '#4169e1'
+                              color: '#124EAF'
                             }}>
                               Latest Program
                             </span>
@@ -2403,7 +2403,7 @@ function SessionView() {
                             }}
                             style={{
                               padding: '3px 6px',
-                              background: '#4169e1',
+                              background: '#124EAF',
                               color: 'white',
                               border: 'none',
                               borderRadius: '3px',
@@ -2414,7 +2414,7 @@ function SessionView() {
                               transition: 'background 0.2s ease'
                             }}
                             onMouseEnter={(e) => e.target.style.background = '#274bb5'}
-                            onMouseLeave={(e) => e.target.style.background = '#4169e1'}
+                            onMouseLeave={(e) => e.target.style.background = '#124EAF'}
                           >
                             View Program
                           </button>
@@ -3172,7 +3172,7 @@ useEffect(() => {
                   value={sessionName}
                   onChange={(e) => setSessionName(e.target.value)}
                   className="session-title-input animate-on-mount-delay-2"
-                  onFocus={(e) => e.target.style.borderColor = '#4169e1'}
+                  onFocus={(e) => e.target.style.borderColor = '#124EAF'}
                   onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
                   disabled={sessionStatus === 'ended'}
                   placeholder="Enter session name..."
@@ -3218,7 +3218,7 @@ useEffect(() => {
                           opacity: hasUnsavedChanges ? 1 : 0.5,
                           cursor: hasUnsavedChanges ? 'pointer' : 'not-allowed',
                           transition: 'all 0.3s ease',
-                          background: hasUnsavedChanges ? '#4169e1' : '#9ca3af',
+                          background: hasUnsavedChanges ? '#124EAF' : '#9ca3af',
                           color: hasUnsavedChanges ? '#fff' : '#6b7280',
                           border: hasUnsavedChanges ? 'none' : '1px solid #d1d5db',
                           boxShadow: hasUnsavedChanges ? '0 2px 8px rgba(65, 105, 225, 0.2)' : 'none'
@@ -3313,14 +3313,14 @@ useEffect(() => {
                   flex: 1,
                   padding: '12px 24px',
                   border: 'none',
-                  background: activeTab === 'main' ? '#4169e1' : 'transparent',
+                  background: activeTab === 'main' ? '#124EAF' : 'transparent',
                   color: activeTab === 'main' ? 'white' : '#666',
                   cursor: 'pointer',
                   fontSize: '16px',
                   fontWeight: '600',
                   borderRadius: '8px 8px 0 0',
                   transition: 'all 0.2s ease',
-                  borderBottom: activeTab === 'main' ? '2px solid #4169e1' : '2px solid transparent'
+                  borderBottom: activeTab === 'main' ? '2px solid #124EAF' : '2px solid transparent'
                 }}
               >
                 Session
@@ -3331,14 +3331,14 @@ useEffect(() => {
                   flex: 1,
                   padding: '12px 24px',
                   border: 'none',
-                  background: activeTab === 'notes' ? '#4169e1' : 'transparent',
+                  background: activeTab === 'notes' ? '#124EAF' : 'transparent',
                   color: activeTab === 'notes' ? 'white' : '#666',
                   cursor: 'pointer',
                   fontSize: '16px',
                   fontWeight: '600',
                   borderRadius: '8px 8px 0 0',
                   transition: 'all 0.2s ease',
-                  borderBottom: activeTab === 'notes' ? '2px solid #4169e1' : '2px solid transparent'
+                  borderBottom: activeTab === 'notes' ? '2px solid #124EAF' : '2px solid transparent'
                 }}
               >
                 Notes
@@ -3349,14 +3349,14 @@ useEffect(() => {
                   flex: 1,
                   padding: '12px 24px',
                   border: 'none',
-                  background: activeTab === 'settings' ? '#4169e1' : 'transparent',
+                  background: activeTab === 'settings' ? '#124EAF' : 'transparent',
                   color: activeTab === 'settings' ? 'white' : '#666',
                   cursor: 'pointer',
                   fontSize: '16px',
                   fontWeight: '600',
                   borderRadius: '8px 8px 0 0',
                   transition: 'all 0.2s ease',
-                  borderBottom: activeTab === 'settings' ? '2px solid #4169e1' : '2px solid transparent'
+                  borderBottom: activeTab === 'settings' ? '2px solid #124EAF' : '2px solid transparent'
                 }}
               >
                 Settings
@@ -3532,7 +3532,7 @@ useEffect(() => {
                             style={{
                               padding: '8px 18px',
                               borderRadius: 8,
-                              background: '#4169e1',
+                              background: '#124EAF',
                               color: '#fff',
                               fontWeight: 600,
                               fontSize: 15,
@@ -3614,7 +3614,7 @@ useEffect(() => {
                         }}>
                           <div style={{
                             height: '100%',
-                            background: 'linear-gradient(90deg, #4169e1 0%, #274bb5 100%)',
+                            background: 'linear-gradient(90deg, #124EAF 0%, #274bb5 100%)',
                             borderRadius: '14px',
                             width: `${Object.keys(robots).length > 0 ? ((lessonCompletions[selectedLessonId]?.size || 0) / Object.keys(robots).length) * 100 : 0}%`,
                             transition: 'width 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -3631,7 +3631,7 @@ useEffect(() => {
                           fontSize: '16px',
                           fontWeight: '600'
                         }}>
-                          <span style={{ color: '#4169e1' }}>
+                          <span style={{ color: '#124EAF' }}>
                             {lessonCompletions[selectedLessonId]?.size || 0}
                           </span>
                           <span style={{ color: '#666' }}>/</span>
@@ -3646,7 +3646,7 @@ useEffect(() => {
                       {/* Progress key below bar, left-aligned */}
                       <div style={{ display: 'flex', gap: '16px', alignItems: 'center', marginTop: '8px', marginLeft: '2px', fontSize: '14px', color: '#666' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#4169e1' }}></div>
+                          <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#124EAF' }}></div>
                           <span>Completed</span>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -3756,7 +3756,7 @@ useEffect(() => {
                                   outline: 'none',
                                   transition: 'border-color 0.2s'
                                 }}
-                                onFocus={(e) => e.target.style.borderColor = '#4169e1'}
+                                onFocus={(e) => e.target.style.borderColor = '#124EAF'}
                                 onBlur={(e) => e.target.style.borderColor = '#e0e0e0'}
                               />
                               {Object.keys(robots).length > 0 && (
@@ -3850,7 +3850,7 @@ useEffect(() => {
                                       fontSize: '14px',
                                       padding: '8px 12px',
                                       height: '36px',
-                                      background: '#4169e1',
+                                      background: '#124EAF',
                                       color: '#fff',
                                       border: 'none',
                                       borderRadius: '6px',
@@ -3989,7 +3989,7 @@ useEffect(() => {
                               outline: 'none',
                               transition: 'border-color 0.2s'
                             }}
-                            onFocus={e => e.target.style.borderColor = '#4169e1'}
+                            onFocus={e => e.target.style.borderColor = '#124EAF'}
                             onBlur={e => e.target.style.borderColor = '#e0e0e0'}
                           />
                         </div>
@@ -4040,7 +4040,7 @@ useEffect(() => {
                         padding: '8px 12px',
                         border: '1px solid #dee2e6',
                         borderRadius: '6px',
-                        background: notesFormatting.bold ? '#4169e1' : '#fff',
+                        background: notesFormatting.bold ? '#124EAF' : '#fff',
                         color: hasTextSelection ? (notesFormatting.bold ? '#fff' : '#495057') : '#ccc',
                         cursor: hasTextSelection ? 'pointer' : 'not-allowed',
                         fontWeight: 'bold',
@@ -4061,7 +4061,7 @@ useEffect(() => {
                         padding: '8px 12px',
                         border: '1px solid #dee2e6',
                         borderRadius: '6px',
-                        background: notesFormatting.italic ? '#4169e1' : '#fff',
+                        background: notesFormatting.italic ? '#124EAF' : '#fff',
                         color: hasTextSelection ? (notesFormatting.italic ? '#fff' : '#495057') : '#ccc',
                         cursor: hasTextSelection ? 'pointer' : 'not-allowed',
                         fontStyle: 'italic',
@@ -4082,7 +4082,7 @@ useEffect(() => {
                         padding: '8px 12px',
                         border: '1px solid #dee2e6',
                         borderRadius: '6px',
-                        background: notesFormatting.underline ? '#4169e1' : '#fff',
+                        background: notesFormatting.underline ? '#124EAF' : '#fff',
                         color: hasTextSelection ? (notesFormatting.underline ? '#fff' : '#495057') : '#ccc',
                         cursor: hasTextSelection ? 'pointer' : 'not-allowed',
                         textDecoration: 'underline',
@@ -4210,7 +4210,7 @@ useEffect(() => {
                         <div style={{
                           display: 'inline-block',
                           padding: '8px 12px',
-                          backgroundColor: getClassroomById(sessionData.classroomId)?.color || '#4169e1',
+                          backgroundColor: getClassroomById(sessionData.classroomId)?.color || '#124EAF',
                           color: '#fff',
                           borderRadius: '6px',
                           fontSize: '14px',
@@ -4279,7 +4279,7 @@ useEffect(() => {
                           fontSize: '14px',
                           fontWeight: '600',
                           cursor: hasUnsavedChanges ? 'pointer' : 'not-allowed',
-                          backgroundColor: hasUnsavedChanges ? '#4169e1' : '#e0e0e0',
+                          backgroundColor: hasUnsavedChanges ? '#124EAF' : '#e0e0e0',
                           color: hasUnsavedChanges ? '#fff' : '#888',
                           fontFamily: 'Space Mono, monospace',
                           transition: 'all 0.2s ease'
@@ -4609,7 +4609,7 @@ useEffect(() => {
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
                             <div style={{ flex: 1 }}>
                               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                                <span style={{ fontSize: '0.85rem', fontWeight: '600', color: '#4169e1', fontFamily: 'monospace' }}>
+                                <span style={{ fontSize: '0.85rem', fontWeight: '600', color: '#124EAF', fontFamily: 'monospace' }}>
                                   {program.deviceId}
                                 </span>
                                 {program.button === 'PLAY' ? (
@@ -4644,7 +4644,7 @@ useEffect(() => {
                               }}
                               style={{
                                 padding: '4px 8px',
-                                background: '#4169e1',
+                                background: '#124EAF',
                                 color: 'white',
                                 border: 'none',
                                 borderRadius: '4px',
@@ -4655,7 +4655,7 @@ useEffect(() => {
                                 transition: 'background 0.2s ease'
                               }}
                               onMouseEnter={(e) => e.target.style.background = '#274bb5'}
-                              onMouseLeave={(e) => e.target.style.background = '#4169e1'}
+                              onMouseLeave={(e) => e.target.style.background = '#124EAF'}
                             >
                               View Program
                             </button>
@@ -4775,7 +4775,7 @@ useEffect(() => {
               {parseProgramCommands(programToAnimate.program).map((cmd, idx) => (
                 <span key={idx} style={{
                   fontWeight: idx === robotAnimState.step ? 700 : 400,
-                  color: idx === robotAnimState.step ? '#4169e1' : '#333',
+                  color: idx === robotAnimState.step ? '#124EAF' : '#333',
                   fontFamily: 'monospace',
                   fontSize: '1rem',
                   opacity: idx === robotAnimState.step ? 1 : 0.6,
@@ -4826,7 +4826,7 @@ useEffect(() => {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M21 16.811c0 .864-.933 1.406-1.683.977l-7.108-4.061a1.125 1.125 0 0 1 0-1.954l7.108-4.061A1.125 1.125 0 0 1 21 8.689v8.122ZM11.25 16.811c0 .864-.933 1.406-1.683.977l-7.108-4.061a1.125 1.125 0 0 1 0-1.954l7.108-4.061a1.125 1.125 0 0 1 1.683.977v8.122Z" />
                 </svg>
               </button>
-              <button onClick={handlePlayPause} style={{ padding: 8, borderRadius: 8, border: '1px solid #4169e1', background: robotAnimState.playing ? '#e3eafe' : '#4169e1', color: robotAnimState.playing ? '#4169e1' : '#fff', fontWeight: 700, fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <button onClick={handlePlayPause} style={{ padding: 8, borderRadius: 8, border: '1px solid #124EAF', background: robotAnimState.playing ? '#e3eafe' : '#124EAF', color: robotAnimState.playing ? '#124EAF' : '#fff', fontWeight: 700, fontSize: 18, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {robotAnimState.playing ? (
                   // Pause SVG
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 28, height: 28 }}>
@@ -4845,7 +4845,7 @@ useEffect(() => {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 8.689c0-.864.933-1.406 1.683-.977l7.108 4.061a1.125 1.125 0 0 1 0 1.954l-7.108 4.061A1.125 1.125 0 0 1 3 16.811V8.69ZM12.75 8.689c0-.864.933-1.406 1.683-.977l7.108 4.061a1.125 1.125 0 0 1 0 1.954l-7.108 4.061a1.125 1.125 0 0 1-1.683-.977V8.69Z" />
                 </svg>
               </button>
-              <button onClick={() => { resetRobotAnim(programToAnimate.program); }} style={{ padding: 8, borderRadius: 8, border: '1px solid #ccc', background: '#fff', color: '#4169e1', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <button onClick={() => { resetRobotAnim(programToAnimate.program); }} style={{ padding: 8, borderRadius: 8, border: '1px solid #ccc', background: '#fff', color: '#124EAF', fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {/* Reset SVG */}
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 28, height: 28 }}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
@@ -4950,7 +4950,7 @@ useEffect(() => {
         <div className="modal-overlay" onClick={() => setShowInactivityModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div style={{ marginBottom: 0, textAlign: 'center' }}>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 60, height: 60, color: '#4169e1', margin: '0 auto' }}>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 60, height: 60, color: '#124EAF', margin: '0 auto' }}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
               </svg>
             </div>
@@ -5005,7 +5005,7 @@ useEffect(() => {
                               <li key={deviceId} style={{ marginBottom: 2 }}>
                                 <span style={{ fontFamily: 'Space Mono, monospace', fontWeight: 600 }}>{deviceId}</span>
                                 {tag && (
-                                  <span style={{ color: '#4169e1', marginLeft: 8, fontWeight: 500, fontSize: 13 }}>
+                                  <span style={{ color: '#124EAF', marginLeft: 8, fontWeight: 500, fontSize: 13 }}>
                                     [{tag}]
                                   </span>
                                 )}
@@ -5048,7 +5048,7 @@ useEffect(() => {
               }}>
                 Leave
               </button>
-              <button className="btn-primary" style={{ background: '#4169e1', borderColor: '#4169e1' }} onClick={async () => {
+              <button className="btn-primary" style={{ background: '#124EAF', borderColor: '#124EAF' }} onClick={async () => {
                 await handleSaveSession();
                 setShowLeaveUnsavedModal(false);
                 if (pendingLeaveAction) await pendingLeaveAction();

@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import Sidebar from './Sidebar';
 import './Sessions.css';
 import './Classrooms.css';
+import './Lessons.css';
 import { db, auth } from '../Firebase.jsx';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 
 const lessonDetailsTitleStyle = `
 .session-view-content .lesson-details-title {
-  font-family: 'Sniglet', serif !important;
+  font-family: 'Bevan', serif !important;
   font-weight: 500 !important;
 }
 `;
@@ -238,14 +239,14 @@ export default function Lessons() {
         <div className="main-content slide-in-from-bottom">
           <div className="top-bar slide-in-from-top" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <h1 className="dashboard-welcome" style={{ fontFamily: 'Bevan, serif', fontWeight: 400, margin: 0 }}>
+              <h1 style={{ margin: 0, fontSize: '2rem', fontWeight: 700, color: '#222', letterSpacing: '0.08em' }}>
                 Lessons
               </h1>
               <span style={{ 
                 fontSize: '0.9rem', 
                 color: '#666', 
                 fontWeight: '400',
-                fontFamily: 'Space Mono, monospace'
+                fontFamily: 'Inter, sans-serif'
               }}>
                 Choose or create a lesson for use in your classroom and related sessions
               </span>
@@ -283,8 +284,9 @@ export default function Lessons() {
                     fontSize: 16,
                     outline: 'none',
                     transition: 'border 0.2s',
+                    fontFamily: 'Space Mono, monospace'
                   }}
-                  onFocus={e => (e.target.style.borderColor = '#4169e1')}
+                  onFocus={e => (e.target.style.borderColor = '#124EAF')}
                   onBlur={e => (e.target.style.borderColor = '#e0e0e0')}
                 />
               </div>
@@ -355,7 +357,7 @@ export default function Lessons() {
                       Delete
                     </button>
                   )}
-                  <h2 className="lesson-details-title" style={{ color: '#4169e1', fontWeight: 700, marginBottom: 12 }}>{lesson.title}</h2>
+                  <h2 className="lesson-details-title" style={{ color: '#124EAF', fontWeight: 700, marginBottom: 12 }}>{lesson.title}</h2>
                   <div style={{ marginBottom: 18, fontSize: 16, color: '#444' }}>
                     <strong>Overview:</strong> {lesson.overview}
                   </div>
@@ -369,7 +371,7 @@ export default function Lessons() {
                     style={{
                       display: 'inline-block',
                       padding: '10px 28px',
-                      background: isValidUrl(lesson.link) ? '#4169e1' : '#e0e0e0',
+                      background: isValidUrl(lesson.link) ? '#124EAF' : '#e0e0e0',
                       color: isValidUrl(lesson.link) ? '#fff' : '#b0b0b0',
                       borderRadius: 8,
                       fontWeight: 600,
@@ -393,6 +395,7 @@ export default function Lessons() {
                     </span>
                   </a>
                   <button
+                    className="assign-classroom-btn"
                     onClick={() => openClassroomAssignmentModal(lesson)}
                     style={{
                       display: 'inline-block',
@@ -408,6 +411,7 @@ export default function Lessons() {
                       transition: 'background 0.2s',
                       cursor: 'pointer',
                       transform: 'translateY(0)',
+                      fontFamily: 'Inter, sans-serif'
                     }}
                     onMouseEnter={e => e.target.style.transform = 'translateY(0)'}
                     onMouseLeave={e => e.target.style.transform = 'translateY(0)'}
@@ -440,43 +444,81 @@ export default function Lessons() {
               </div>
               <div className="modal-body">
                 <div style={{ marginBottom: 18 }}>
-                  <label style={{ fontWeight: 600, color: '#4169e1', marginBottom: 6, display: 'block', fontFamily: 'Space Mono, monospace' }}>Lesson Name <span style={{ color: 'red' }}>*</span></label>
+                  <label style={{ fontWeight: 600, color: '#124EAF', marginBottom: 6, display: 'block', fontFamily: 'Inter, sans-serif', fontSize: 16 }}>Lesson Name <span style={{ color: 'red' }}>*</span></label>
                   <input
                     type="text"
                     value={newLesson.title}
-                    onChange={e => setNewLesson({ ...newLesson, title: e.target.value })}
+                    onChange={(e) => setNewLesson({ ...newLesson, title: e.target.value })}
                     placeholder="Enter lesson name"
-                    style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #e0e0e0', fontSize: 16, marginBottom: 8, fontFamily: 'Space Mono, monospace' }}
-                    required
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '2px solid #e0e0e0',
+                      borderRadius: '8px',
+                      fontSize: 16,
+                      marginBottom: 8,
+                      fontFamily: 'Space Mono, monospace'
+                    }}
+                    onFocus={e => (e.target.style.borderColor = '#124EAF')}
+                    onBlur={e => (e.target.style.borderColor = '#e0e0e0')}
                   />
                 </div>
-                <div style={{ marginBottom: 18 }}>
-                  <label style={{ fontWeight: 600, color: '#4169e1', marginBottom: 6, display: 'block', fontFamily: 'Space Mono, monospace' }}>Overview</label>
+                <div className="form-group">
+                  <label style={{ fontWeight: 600, color: '#124EAF', marginBottom: 6, display: 'block', fontFamily: 'Space Mono, monospace' }}>Overview</label>
                   <textarea
                     value={newLesson.overview}
-                    onChange={e => setNewLesson({ ...newLesson, overview: e.target.value })}
+                    onChange={(e) => setNewLesson({ ...newLesson, overview: e.target.value })}
                     placeholder="Enter lesson overview"
-                    style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #e0e0e0', fontSize: 16, minHeight: 60, resize: 'vertical', fontFamily: 'Space Mono, monospace' }}
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '2px solid #e0e0e0',
+                      borderRadius: '8px',
+                      fontSize: 16,
+                      minHeight: 60,
+                      resize: 'vertical',
+                      fontFamily: 'Space Mono, monospace'
+                    }}
+                    onFocus={e => (e.target.style.borderColor = '#124EAF')}
+                    onBlur={e => (e.target.style.borderColor = '#e0e0e0')}
                   />
                 </div>
-                <div style={{ marginBottom: 18 }}>
-                  <label style={{ fontWeight: 600, color: '#4169e1', marginBottom: 6, display: 'block', fontFamily: 'Space Mono, monospace' }}>Grade Levels</label>
+                <div className="form-group">
+                  <label style={{ fontWeight: 600, color: '#124EAF', marginBottom: 6, display: 'block', fontFamily: 'Space Mono, monospace' }}>Grade Levels</label>
                   <input
                     type="text"
                     value={newLesson.age}
-                    onChange={e => setNewLesson({ ...newLesson, age: e.target.value })}
-                    placeholder="Enter grade levels"
-                    style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #e0e0e0', fontSize: 16, fontFamily: 'Space Mono, monospace' }}
+                    onChange={(e) => setNewLesson({ ...newLesson, age: e.target.value })}
+                    placeholder="e.g., K-5, 6-8, 9-12"
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '2px solid #e0e0e0',
+                      borderRadius: '8px',
+                      fontSize: 16,
+                      fontFamily: 'Space Mono, monospace'
+                    }}
+                    onFocus={e => (e.target.style.borderColor = '#124EAF')}
+                    onBlur={e => (e.target.style.borderColor = '#e0e0e0')}
                   />
                 </div>
-                <div style={{ marginBottom: 18 }}>
-                  <label style={{ fontWeight: 600, color: '#4169e1', marginBottom: 6, display: 'block', fontFamily: 'Space Mono, monospace' }}>Lesson Link</label>
+                <div className="form-group">
+                  <label style={{ fontWeight: 600, color: '#124EAF', marginBottom: 6, display: 'block', fontFamily: 'Space Mono, monospace' }}>Lesson Link</label>
                   <input
-                    type="text"
+                    type="url"
                     value={newLesson.link}
-                    onChange={e => setNewLesson({ ...newLesson, link: e.target.value })}
-                    placeholder="Enter lesson link"
-                    style={{ width: '100%', padding: '10px 12px', borderRadius: 8, border: '1.5px solid #e0e0e0', fontSize: 16, fontFamily: 'Space Mono, monospace' }}
+                    onChange={(e) => setNewLesson({ ...newLesson, link: e.target.value })}
+                    placeholder="Enter lesson URL"
+                    style={{
+                      width: '100%',
+                      padding: '12px 16px',
+                      border: '2px solid #e0e0e0',
+                      borderRadius: '8px',
+                      fontSize: 16,
+                      fontFamily: 'Space Mono, monospace'
+                    }}
+                    onFocus={e => (e.target.style.borderColor = '#124EAF')}
+                    onBlur={e => (e.target.style.borderColor = '#e0e0e0')}
                   />
                 </div>
               </div>
@@ -484,13 +526,14 @@ export default function Lessons() {
                 <button className="btn-secondary" onClick={() => setShowCreateModal(false)}>
                   Cancel
                 </button>
-                <button className="btn-primary"
+                <button 
+                  className="btn-primary"
                   style={{
-                    background: newLesson.title.trim() ? '#4169e1' : '#e0e0e0',
-                    borderColor: newLesson.title.trim() ? '#4169e1' : '#e0e0e0',
+                    background: newLesson.title.trim() ? '#124EAF' : '#e0e0e0',
+                    borderColor: newLesson.title.trim() ? '#124EAF' : '#e0e0e0',
                     color: newLesson.title.trim() ? '#fff' : '#b0b0b0',
                     cursor: newLesson.title.trim() ? 'pointer' : 'not-allowed',
-                    fontFamily: 'Space Mono, monospace'
+                    fontFamily: 'Inter, sans-serif'
                   }}
                   onClick={handleCreateLesson}
                   disabled={!newLesson.title.trim()}
@@ -542,11 +585,11 @@ export default function Lessons() {
               </div>
               <div className="modal-body" style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                 <div style={{ marginBottom: 20, marginTop: -20 }}>
-                  {/* <h3 style={{ color: '#4169e1', marginBottom: 8 }}>{selectedLessonForAssignment.title}</h3> */}
+                  {/* <h3 style={{ color: '#124EAF', marginBottom: 8 }}>{selectedLessonForAssignment.title}</h3> */}
                   {selectedClassrooms.length > 0 || classroomsToUnassign.length > 0 ? (
                     <div style={{ 
                       padding: '8px 12px', 
-                      backgroundColor: '#4169e1', 
+                      backgroundColor: '#124EAF', 
                       color: '#fff', 
                       borderRadius: 6,
                       fontSize: 14,
@@ -589,7 +632,7 @@ export default function Lessons() {
                           transition: 'border 0.2s',
                           fontFamily: 'Space Mono, monospace'
                         }}
-                        onFocus={e => (e.target.style.borderColor = '#4169e1')}
+                        onFocus={e => (e.target.style.borderColor = '#124EAF')}
                         onBlur={e => (e.target.style.borderColor = '#e0e0e0')}
                       />
                     </div>
@@ -616,7 +659,7 @@ export default function Lessons() {
                               border: '1px solid #e0e0e0',
                               borderRadius: 8,
                               marginBottom: 8,
-                              background: classroom.color || '#4169e1',
+                              background: classroom.color || '#124EAF',
                               color: '#fff',
                               opacity: isAlreadyAssigned ? 0.9 : 1,
                               height: '60px'
@@ -658,7 +701,7 @@ export default function Lessons() {
                                   }}
                                 >
                                   {(isAlreadyAssigned ? !classroomsToUnassign.includes(classroom.id) : selectedClassrooms.includes(classroom.id)) && (
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 14, height: 14, color: classroom.color || '#4169e1' }}>
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 14, height: 14, color: classroom.color || '#124EAF' }}>
                                       <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                                     </svg>
                                   )}
@@ -738,14 +781,15 @@ function LessonTabWithTrash({ lesson, isActive, onClick, onDelete, canDelete }) 
           border: 'none',
           borderRadius: 10,
           background: isActive ? '#f0f4ff' : 'none',
-          color: isActive ? '#4169e1' : '#222',
+          color: isActive ? '#124EAF' : '#222',
           fontWeight: 700,
           fontSize: 17,
           cursor: 'pointer',
           transition: 'background 0.2s, color 0.2s',
           outline: 'none',
           boxShadow: isActive ? '0 2px 8px rgba(65, 105, 225, 0.08)' : 'none',
-          borderLeft: isActive ? '4px solid #4169e1' : '4px solid transparent',
+          borderBottom: '2px solid transparent',
+          borderLeft: isActive ? '4px solid #124EAF' : '4px solid transparent',
           display: 'block',
           overflow: 'hidden',
           whiteSpace: 'nowrap',
@@ -770,7 +814,7 @@ function LessonTabWithTrash({ lesson, isActive, onClick, onDelete, canDelete }) 
             padding: 0,
             margin: 0,
             zIndex: 2,
-            color: '#4169e1',
+            color: '#124EAF',
             opacity: 1,
             transition: 'color 0.2s',
           }}
