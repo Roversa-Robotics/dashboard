@@ -7,10 +7,21 @@ import { db, auth } from '../Firebase.jsx';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 
+// Import lesson images
+import IFeelImage from '../roversalessons/IFeel.png';
+import UnderwaterMissionImage from '../roversalessons/UnderwaterMission.png';
+import GridChallengesImage from '../roversalessons/GridChallenges.png';
+import DuckDuckRobotImage from '../roversalessons/DuckDuckRobot.png';
+
 const lessonDetailsTitleStyle = `
 .session-view-content .lesson-details-title {
   font-family: 'Bevan', serif !important;
   font-weight: 500 !important;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 `;
 
@@ -21,13 +32,15 @@ const LESSONS = [
     overview: 'Code Roversa to move on a grid toward an emotion based on a scenario.',
     age: 'Pre-K - 2nd',
     link: 'https://docs.google.com/document/d/15hDBUGjhOFpLSPmmkFJMXMcShzhLqdaBW9WTI3UOFXs/edit?tab=t.0#heading=h.a6lqxihc6dhl',
+    image: IFeelImage,
   },
   {
     id: 'lesson2',
-    title: 'Hungry, Hungry Robot',
-    overview: 'Code Roversa to move on a grid to bring a story to life.',
-    age: 'Pre-K - 2nd',
-    link: 'https://docs.google.com/document/d/13E9Lz6l0eP4ZT-kJBxJST35SX4427fOw6XLlfcZpwm0/edit?tab=t.0#heading=h.a6lqxihc6dhl',
+    title: 'Underwater Mission',
+    overview: 'Program Roversa to complete a variety of missions exploring important geological features of the ocean floor.',
+    age: '3rd - 5th',
+    link: 'https://docs.google.com/document/d/1ULP0tlvJSMT7Tjg5rQgMcqaLqZ4ejNO7KtGgwhhurWQ/edit?usp=sharing',
+    image: UnderwaterMissionImage,
   },
   {
     id: 'lesson3',
@@ -35,6 +48,7 @@ const LESSONS = [
     overview: 'Code Roversa to move on a grid toward certain objectives.',
     age: '3rd - 5th',
     link: 'https://docs.google.com/document/d/1qHoE0t6diltiHJbYG4hKiGGIJOQFLw3rRNMmLgWc-1E/edit?tab=t.0#heading=h.a6lqxihc6dhl',
+    image: GridChallengesImage,
   },
   {
     id: 'lesson4',
@@ -42,6 +56,7 @@ const LESSONS = [
     overview: 'Match numerals to number of obejcts and solve number facts by coding Roversa to the correct answer.',
     age: 'Pre-K - 2nd',
     link: 'https://docs.google.com/document/d/14jte14tL0Txgm1CdY9kZsbov0lZDoqv7UyhECFW8ioI/edit?tab=t.0#heading=h.a6lqxihc6dhl',
+    image: DuckDuckRobotImage,
   },
 ];
 
@@ -62,7 +77,7 @@ export default function Lessons() {
   const [search, setSearch] = useState('');
   const [lessons, setLessons] = useState([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [newLesson, setNewLesson] = useState({ title: '', overview: '', age: '', link: '' });
+  const [newLesson, setNewLesson] = useState({ title: '', overview: '', age: '', link: '', image: '' });
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [lessonToDelete, setLessonToDelete] = useState(null);
   const [showClassroomAssignmentModal, setShowClassroomAssignmentModal] = useState(false);
@@ -87,29 +102,152 @@ export default function Lessons() {
   // Helper to load lessons from Firestore
   const loadLessons = async (user) => {
     if (!user) return;
-    const docRef = doc(db, 'users', user.uid, 'appdata', 'lessons');
+    
+    // Always start with hardcoded default lessons
+    let allLessons = [...LESSONS];
+    
+    // Load any custom lessons from Firebase and append them
+    const docRef = doc(db, 'users', user.uid, 'appdata', 'customLessons');
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
-      const loaded = docSnap.data().lessons || [];
-      // If user has no lessons, initialize with defaults
-      if (loaded.length === 0) {
-        await setDoc(docRef, { lessons: [...LESSONS] });
-        setLessons([...LESSONS]);
-      } else {
-        setLessons(loaded);
-      }
-    } else {
-      // No lessons doc: initialize with defaults
-      await setDoc(docRef, { lessons: [...LESSONS] });
-      setLessons([...LESSONS]);
+      const customLessons = docSnap.data().lessons || [];
+      // Append custom lessons to defaults
+      allLessons = [...allLessons, ...customLessons];
     }
+    
+    setLessons(allLessons);
   };
 
   // Helper to save lessons to Firestore
   const saveLessons = async (user, lessonsArr) => {
     if (!user) return;
-    const docRef = doc(db, 'users', user.uid, 'appdata', 'lessons');
-    await setDoc(docRef, { lessons: lessonsArr });
+    
+    // Filter out default lessons - only save custom ones
+    const customLessons = lessonsArr.filter(lesson => !DEFAULT_LESSON_IDS.includes(lesson.id));
+    
+    const docRef = doc(db, 'users', user.uid, 'appdata', 'customLessons');
+    await setDoc(docRef, { lessons: customLessons });
+  };
+
+  // Helper to handle image upload and processing
+  const handleImageUpload = async (event, lessonId) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select a valid image file.');
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image file size must be less than 5MB.');
+      return;
+    }
+
+    try {
+      // Show loading state by temporarily updating the lesson
+      const loadingLessons = lessons.map(lesson => 
+        lesson.id === lessonId 
+          ? { ...lesson, image: 'loading' }
+          : lesson
+      );
+      setLessons(loadingLessons);
+
+      // Create a canvas for image processing
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      
+      // Create an image element
+      const img = new Image();
+      img.onload = () => {
+        // Calculate dimensions for square crop
+        const size = Math.min(img.width, img.height);
+        const startX = (img.width - size) / 2;
+        const startY = (img.height - size) / 2;
+        
+        // Set canvas size to 240x240
+        canvas.width = 240;
+        canvas.height = 240;
+        
+        // Draw the cropped and resized image
+        ctx.drawImage(img, startX, startY, size, size, 0, 0, 240, 240);
+        
+        // Convert to blob and then to base64 for Firebase storage
+        canvas.toBlob((blob) => {
+          if (blob) {
+            // Convert blob to base64 string for Firebase storage
+            const reader = new FileReader();
+            reader.onload = () => {
+              const base64Image = reader.result;
+              
+              // Update the lesson with the base64 image
+              const updatedLessons = lessons.map(lesson => 
+                lesson.id === lessonId 
+                  ? { ...lesson, image: base64Image }
+                  : lesson
+              );
+              
+              setLessons(updatedLessons);
+              
+              // Save to Firebase
+              saveLessons(auth.currentUser, updatedLessons);
+            };
+            reader.readAsDataURL(blob);
+          }
+        }, 'image/jpeg', 0.9);
+      };
+      
+      img.onerror = () => {
+        // Handle image loading error
+        const errorLessons = lessons.map(lesson => 
+          lesson.id === lessonId 
+            ? { ...lesson, image: null }
+            : lesson
+        );
+        setLessons(errorLessons);
+        alert('Error loading image. Please try again.');
+      };
+      
+      img.src = URL.createObjectURL(file);
+      
+    } catch (error) {
+      console.error('Error processing image:', error);
+      alert('Error processing image. Please try again.');
+      
+      // Reset to no image on error
+      const errorLessons = lessons.map(lesson => 
+        lesson.id === lessonId 
+          ? { ...lesson, image: null }
+          : lesson
+      );
+      setLessons(errorLessons);
+    }
+    
+    // Reset the file input
+    event.target.value = '';
+  };
+
+  // Helper to remove image from a lesson
+  const handleRemoveImage = async (lessonId) => {
+    try {
+      // Update the lesson to remove the image
+      const updatedLessons = lessons.map(lesson => 
+        lesson.id === lessonId 
+          ? { ...lesson, image: null }
+          : lesson
+      );
+      
+      setLessons(updatedLessons);
+      
+      // Save to Firebase
+      saveLessons(auth.currentUser, updatedLessons);
+      
+    } catch (error) {
+      console.error('Error removing image:', error);
+      alert('Error removing image. Please try again.');
+    }
   };
 
   // Helper to load classrooms from Firestore
@@ -190,38 +328,48 @@ export default function Lessons() {
     // localStorage.setItem('roversaLessons', JSON.stringify(lessons));
   }, [lessons]);
 
+  // Cleanup effect when component unmounts or lessons change
+  React.useEffect(() => {
+    return () => {
+      // No cleanup needed for base64 images
+    };
+  }, [lessons]);
+
   const handleCreateLesson = async () => {
     if (!newLesson.title.trim()) return;
     const user = auth.currentUser;
-    const docRef = doc(db, 'users', user.uid, 'appdata', 'lessons');
-    const docSnap = await getDoc(docRef);
-    let lessonsArr = [];
-    if (docSnap.exists()) {
-      lessonsArr = docSnap.data().lessons || [];
-      // If user has no lessons, initialize with defaults
-      if (lessonsArr.length === 0) {
-        lessonsArr = [...LESSONS];
-      }
-    } else {
-      lessonsArr = [...LESSONS];
-    }
+    
+    // Create new custom lesson
     const id = 'lesson' + (Date.now());
-    const updatedLessons = [
-      ...lessonsArr,
-      { id, title: newLesson.title, overview: newLesson.overview, age: newLesson.age, link: newLesson.link }
-    ];
-    await setDoc(docRef, { lessons: updatedLessons });
+    const newCustomLesson = { id, title: newLesson.title, overview: newLesson.overview, age: newLesson.age, link: newLesson.link, image: newLesson.image };
+    
+    // Add to current lessons state
+    const updatedLessons = [...lessons, newCustomLesson];
     setLessons(updatedLessons);
+    
+    // Save only custom lessons to Firebase
+    await saveLessons(user, updatedLessons);
+    
     setActiveTab(id);
     setShowCreateModal(false);
-    setNewLesson({ title: '', overview: '', age: '', link: '' });
+    setNewLesson({ title: '', overview: '', age: '', link: '', image: '' });
   };
 
   const handleDeleteLesson = async (id) => {
     const user = auth.currentUser;
+    
+    // Don't allow deletion of default lessons
+    if (DEFAULT_LESSON_IDS.includes(id)) {
+      alert('Default lessons cannot be deleted.');
+      return;
+    }
+    
     const updated = lessons.filter(l => l.id !== id);
-    await saveLessons(user, updated);
     setLessons(updated);
+    
+    // Save only custom lessons to Firebase
+    await saveLessons(user, updated);
+    
     // If the deleted lesson is active, switch to another
     if (activeTab === id) {
       const next = updated[0]?.id || '';
@@ -357,29 +505,213 @@ export default function Lessons() {
                       Delete
                     </button>
                   )}
-                  <h2 className="lesson-details-title" style={{ color: '#124EAF', fontWeight: 700, marginBottom: 12 }}>{lesson.title}</h2>
-                  <div style={{ marginBottom: 18, fontSize: 16, color: '#444' }}>
-                    <strong>Overview:</strong> {lesson.overview}
-                  </div>
-                  <div style={{ marginBottom: 18, fontSize: 16, color: '#444' }}>
-                    <strong>Grade Levels:</strong> {lesson.age}
-                  </div>
-                  <a
+                  
+                  {/* Two-column layout: Image on left, content on right */}
+                  <div style={{ display: 'flex', gap: 24, alignItems: 'flex-start' }}>
+                                                              {/* Left side: Image area */}
+                      <div style={{
+                        width: 240,
+                        height: 240,
+                        background: lesson.image ? '#e8f0fe' : '#f5f5f5',
+                        border: lesson.image ? '2px dashed #124EAF' : '2px dashed #ccc',
+                        borderRadius: 12,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        overflow: 'hidden',
+                        boxSizing: 'border-box',
+                        position: 'relative'
+                      }}>
+                        {lesson.image && lesson.image !== 'loading' ? (
+                          <img 
+                            src={lesson.image} 
+                            alt={`${lesson.title} lesson`}
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover',
+                              borderRadius: 10
+                            }}
+                            onError={(e) => {
+                              // Fallback to placeholder if image fails to load
+                              e.target.style.display = 'none';
+                              e.target.nextSibling.style.display = 'flex';
+                            }}
+                          />
+                        ) : null}
+                        
+                        {/* Loading state */}
+                        {lesson.image === 'loading' && (
+                          <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#124EAF',
+                            fontSize: 14,
+                            fontWeight: 500,
+                            textAlign: 'center',
+                            padding: 16,
+                            width: '100%',
+                            height: '100%'
+                          }}>
+                            <div style={{
+                              width: 32,
+                              height: 32,
+                              border: '3px solid #e8f0fe',
+                              borderTop: '3px solid #124EAF',
+                              borderRadius: '50%',
+                              animation: 'spin 1s linear infinite',
+                              margin: '0 auto 12px'
+                            }}></div>
+                            <div>Processing Image...</div>
+                            <div style={{ fontSize: 12, opacity: 0.7, marginTop: 4 }}>Please wait</div>
+                          </div>
+                        )}
+                        
+                        {/* Upload button for user-created lessons */}
+                        {!DEFAULT_LESSON_IDS.includes(lesson.id) && (!lesson.image || lesson.image === null) && (
+                          <div 
+                            style={{
+                              display: 'flex',
+                              flexDirection: 'column',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              color: '#666',
+                              fontSize: 14,
+                              fontWeight: 500,
+                              textAlign: 'center',
+                              padding: 16,
+                              width: '100%',
+                              height: '100%',
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease',
+                              borderRadius: 10
+                            }}
+                            onClick={() => document.getElementById(`image-upload-${lesson.id}`).click()}
+                            onMouseEnter={(e) => {
+                              e.target.style.background = '#e8f0fe';
+                              e.target.style.color = '#124EAF';
+                              e.target.style.transform = 'scale(1.02)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.target.style.background = 'transparent';
+                              e.target.style.color = '#666';
+                              e.target.style.transform = 'scale(1)';
+                            }}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 48, height: 48, margin: '0 auto 12px', display: 'block' }}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />
+                            </svg>
+                            <div>Upload Image</div>
+                            <div style={{ fontSize: 12, opacity: 0.7, marginTop: 4 }}>Click to upload</div>
+                          </div>
+                        )}
+                        
+                        {/* Default lesson placeholder */}
+                        {DEFAULT_LESSON_IDS.includes(lesson.id) && !lesson.image && (
+                          <div style={{
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: '#124EAF',
+                            fontSize: 14,
+                            fontWeight: 500,
+                            textAlign: 'center',
+                            padding: 16,
+                            width: '100%',
+                            height: '100%'
+                          }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 48, height: 48, margin: '0 auto 12px', display: 'block' }}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+                            </svg>
+                            <div>Lesson Image</div>
+                            <div style={{ fontSize: 12, opacity: 0.7, marginTop: 4 }}>240x240px</div>
+                          </div>
+                        )}
+                        
+                        {/* Hidden file input for image upload */}
+                        {!DEFAULT_LESSON_IDS.includes(lesson.id) && (
+                          <input
+                            id={`image-upload-${lesson.id}`}
+                            type="file"
+                            accept="image/*"
+                            style={{ display: 'none' }}
+                            onChange={(e) => handleImageUpload(e, lesson.id)}
+                          />
+                        )}
+                        
+                        {/* Remove image button for user-created lessons with images */}
+                        {!DEFAULT_LESSON_IDS.includes(lesson.id) && lesson.image && lesson.image !== 'loading' && lesson.image !== null && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRemoveImage(lesson.id);
+                            }}
+                            style={{
+                              position: 'absolute',
+                              top: 5,
+                              right: 3,
+                              background: 'rgba(220, 53, 69, 0.9)',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '10%',
+                              width: 26,
+                              height: 26,
+                              minWidth: 26,
+                              minHeight: 26,
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              cursor: 'pointer',
+                              fontSize: 16,
+                              fontWeight: 'bold',
+                              transition: 'all 0.2s ease',
+                              padding: 0,
+                              lineHeight: 1
+                            }}
+                            onMouseEnter={(e) => {
+                              e.target.style.background = 'rgba(220, 53, 69, 1)';
+                              e.target.style.transform = 'scale(1.1)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.target.style.background = 'rgba(220, 53, 69, 0.9)';
+                              e.target.style.transform = 'scale(1)';
+                            }}
+                            title="Remove image"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
+                    
+                    {/* Right side: Lesson content */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <h2 className="lesson-details-title" style={{ color: '#124EAF', fontWeight: 700, marginBottom: 12 }}>{lesson.title}</h2>
+                      <div style={{ marginBottom: 18, fontSize: 16, color: '#444' }}>
+                        <strong>Overview:</strong> {lesson.overview}
+                      </div>
+                      <div style={{ marginBottom: 18, fontSize: 16, color: '#444' }}>
+                        <strong>Grade Levels:</strong> {lesson.age}
+                      </div>
+                                        <a
                     href={isValidUrl(lesson.link) ? lesson.link : undefined}
                     target="_blank"
                     rel="noopener noreferrer"
                     style={{
                       display: 'inline-block',
-                      padding: '10px 28px',
+                      padding: '8px 20px',
                       background: isValidUrl(lesson.link) ? '#124EAF' : '#e0e0e0',
                       color: isValidUrl(lesson.link) ? '#fff' : '#b0b0b0',
-                      borderRadius: 8,
+                      borderRadius: 6,
                       fontWeight: 600,
-                      fontSize: 16,
+                      fontSize: 14,
                       textDecoration: 'none',
-                      boxShadow: '0 2px 8px rgba(65, 105, 225, 0.10)',
+                      boxShadow: '0 2px 6px rgba(65, 105, 225, 0.10)',
                       marginTop: 8,
-                      marginRight: 12,
+                      marginRight: 10,
                       transition: 'background 0.2s',
                       cursor: isValidUrl(lesson.link) ? 'pointer' : 'not-allowed',
                       pointerEvents: isValidUrl(lesson.link) ? 'auto' : 'none',
@@ -387,9 +719,9 @@ export default function Lessons() {
                     tabIndex={isValidUrl(lesson.link) ? 0 : -1}
                     aria-disabled={!isValidUrl(lesson.link)}
                   >
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                       View Lesson
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 22, height: 22, marginLeft: 0, display: 'inline-block' }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 18, height: 18, marginLeft: 0, display: 'inline-block' }}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H5.25A2.25 2.25 0 0 0 3 8.25v10.5A2.25 2.25 0 0 0 5.25 21h10.5A2.25 2.25 0 0 0 18 18.75V10.5m-10.5 6L21 3m0 0h-5.25M21 3v5.25" />
                       </svg>
                     </span>
@@ -399,14 +731,14 @@ export default function Lessons() {
                     onClick={() => openClassroomAssignmentModal(lesson)}
                     style={{
                       display: 'inline-block',
-                      padding: '10px 28px',
+                      padding: '8px 20px',
                       background: '#6f42c1',
                       color: '#fff',
-                      borderRadius: 8,
+                      borderRadius: 6,
                       fontWeight: 600,
-                      fontSize: 16,
+                      fontSize: 14,
                       border: 'none',
-                      boxShadow: '0 2px 8px rgba(111, 66, 193, 0.10)',
+                      boxShadow: '0 2px 6px rgba(111, 66, 193, 0.10)',
                       marginTop: 8,
                       transition: 'background 0.2s',
                       cursor: 'pointer',
@@ -416,13 +748,15 @@ export default function Lessons() {
                     onMouseEnter={e => e.target.style.transform = 'translateY(0)'}
                     onMouseLeave={e => e.target.style.transform = 'translateY(0)'}
                   >
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                       Assign to Classroom
-                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 22, height: 22, marginLeft: 0, display: 'inline-block' }}>
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 18, height: 18, marginLeft: 0, display: 'inline-block' }}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
                       </svg>
                     </span>
                   </button>
+                    </div>
+                  </div>
                 </>
               ) : (
                 <div style={{ color: '#888', fontStyle: 'italic', marginTop: 24 }}>No lesson selected.</div>

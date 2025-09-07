@@ -462,6 +462,9 @@ body {
     display: flex;
     flex-direction: column;
     gap: 18px;
+    position: relative;
+    z-index: 99999;
+    pointer-events: auto;
 }
 .recent-session-item {
     background: #f7f8fa;
@@ -567,6 +570,9 @@ body {
   border: 1px solid #f0f0f0;
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 99999;
+  pointer-events: auto;
 }
 .recent-session-card:hover {
   box-shadow: 0 4px 16px rgba(18, 78, 175, 0.13);
@@ -708,4 +714,11 @@ body {
 .dashboard-card .session-list-item:hover > div:first-child {
   margin-right: 0 !important;
   transition: none !important;
+}
+
+/* Recent session cards in quick access row */
+.recent-session-card:hover {
+  background: #e3eafe !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(18, 78, 175, 0.15);
 } 

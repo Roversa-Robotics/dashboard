@@ -373,9 +373,39 @@ function Dashboard() {
             {/* Calendar card on the right */}
             <div className="dashboard-calendar-card animate-on-mount-delay-5" style={{ minWidth: 220, maxWidth: 320, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', position: 'relative' }}>
               <DashboardCalendar sessions={[...activeSessions, ...pausedSessions, ...recentSessions]} />
-              
-              {/* Recent Sessions section positioned below the calendar */}
-              <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 20, zIndex: 10, width: '100%', minWidth: 220, maxWidth: 300 }}>
+            </div>
+          </div>
+          
+          {/* Quick Access section with Recent Sessions */}
+          <div style={{ marginTop: 10, marginBottom: 20 }}>
+            <h2 style={{ fontSize: '2rem', fontWeight: 700, color: '#222', marginBottom: 20, fontFamily: 'Inter, sans-serif', textAlign: 'left' }}>Quick Access →</h2>
+            <div className="dashboard-cards-row" style={{ display: 'flex', gap: 24, paddingBottom: 0, alignItems: 'flex-start' }}>
+              {/* Meet Roversa Card */}
+              <div className="dashboard-card fade-in-scale animate-on-mount-delay-3" onClick={() => window.open('https://sites.google.com/roversa.com/roversa-classroom/meet-roversa', '_blank')} style={{ flex: '1 1 320px', minWidth: 250, maxWidth: 250 }}>
+                <img src={myclassrooms} alt="Meet Roversa" className="dashboard-card-bg" />
+                <div className="dashboard-card-content">
+                  <div className="dashboard-card-title">Meet Roversa</div>
+                  <div className="dashboard-card-desc">Get started and learn more about Roversa</div>
+                </div>
+              </div>
+              {/* Guides Card */}
+              <div className="dashboard-card fade-in-scale animate-on-mount-delay-1" onClick={() => window.open('https://sites.google.com/roversa.com/roversa-classroom/guides', '_blank')} style={{ flex: '1 1 320px', minWidth: 250, maxWidth: 250 }}>
+                <img src={myrobots} alt="Guides" className="dashboard-card-bg" />
+                <div className="dashboard-card-content">
+                  <div className="dashboard-card-title">User Guides</div>
+                  <div className="dashboard-card-desc">Find guides and technical documentation</div>
+                </div>
+              </div>
+              {/* Lesson Repo card */}
+              <div className="dashboard-card fade-in-scale animate-on-mount-delay-4" onClick={() => window.open('https://sites.google.com/roversa.com/roversa-classroom/lessons', '_blank')} style={{ flex: '1 1 320px', minWidth: 250, maxWidth: 250 }}>
+                <img src={accessguides} alt="Lessons" className="dashboard-card-bg" />
+                <div className="dashboard-card-content">
+                  <div className="dashboard-card-title">Lesson Repository</div>
+                  <div className="dashboard-card-desc">View all of Roversa's provided lessons</div>
+                </div>
+              </div>
+              {/* Recent Sessions Card */}
+              <div className="recent-sessions-section fade-in-scale animate-on-mount-delay-6" style={{ flex: '1 1 320px', minWidth: 250, maxWidth: 300, marginTop: '-60px' }}>
                 <h3 style={{ fontSize: '1.5rem', fontWeight: 700, color: '#222', marginBottom: 6, fontFamily: 'Inter, sans-serif', textAlign: 'left' }}>Recent Sessions</h3>
                 <div className="recent-sessions-subtitle" style={{ color: '#555', fontSize: '0.85rem', marginBottom: 24, fontFamily: 'Open Sans, sans-serif' }}>
                   View student progress on most recently assigned sessions
@@ -390,7 +420,11 @@ function Dashboard() {
                         <div 
                           key={session.id} 
                           className={`recent-session-card slide-in-from-right animate-on-mount-delay-${5 + index}`}
-                          onClick={() => navigate(`/sessions/${session.id}`)}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            navigate(`/sessions/${session.id}`);
+                          }}
                           style={{ cursor: 'pointer', position: 'relative' }}
                         >
                           {/* Ended status badge removed */}
@@ -422,37 +456,6 @@ function Dashboard() {
                   ) : (
                     <div className="recent-session-item no-sessions animate-on-mount-delay-5" style={{ color: '#888', fontSize: '1rem', textAlign: 'center', padding: '20px 0', fontFamily: 'monospace' }}>No recent sessions</div>
                   )}
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          {/* Quick Access section moved below the main row */}
-          <div style={{ marginTop: 30, marginBottom: 20 }}>
-            <h2 style={{ fontSize: '2rem', fontWeight: 700, color: '#222', marginBottom: 20, fontFamily: 'Inter, sans-serif', textAlign: 'left' }}>Quick Access →</h2>
-            <div className="dashboard-cards-row" style={{ display: 'flex', gap: 24, paddingBottom: 0 }}>
-              {/* Meet Roversa Card */}
-              <div className="dashboard-card fade-in-scale animate-on-mount-delay-3" onClick={() => window.open('https://sites.google.com/roversa.com/roversa-classroom/meet-roversa', '_blank')} style={{ flex: '1 1 320px', minWidth: 250, maxWidth: 250 }}>
-                <img src={myclassrooms} alt="Meet Roversa" className="dashboard-card-bg" />
-                <div className="dashboard-card-content">
-                  <div className="dashboard-card-title">Meet Roversa</div>
-                  <div className="dashboard-card-desc">Get started and learn more about Roversa</div>
-                </div>
-              </div>
-              {/* Guides Card */}
-              <div className="dashboard-card fade-in-scale animate-on-mount-delay-1" onClick={() => window.open('https://sites.google.com/roversa.com/roversa-classroom/guides', '_blank')} style={{ flex: '1 1 320px', minWidth: 250, maxWidth: 250 }}>
-                <img src={myrobots} alt="Guides" className="dashboard-card-bg" />
-                <div className="dashboard-card-content">
-                  <div className="dashboard-card-title">User Guides</div>
-                  <div className="dashboard-card-desc">Find guides and technical documentation</div>
-                </div>
-              </div>
-              {/* Lesson Repo card */}
-              <div className="dashboard-card fade-in-scale animate-on-mount-delay-4" onClick={() => window.open('https://sites.google.com/roversa.com/roversa-classroom/lessons', '_blank')} style={{ flex: '1 1 320px', minWidth: 250, maxWidth: 250 }}>
-                <img src={accessguides} alt="Lessons" className="dashboard-card-bg" />
-                <div className="dashboard-card-content">
-                  <div className="dashboard-card-title">Lesson Repository</div>
-                  <div className="dashboard-card-desc">View all of Roversa's provided lessons</div>
                 </div>
               </div>
             </div>

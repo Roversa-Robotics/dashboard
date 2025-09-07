@@ -6,6 +6,12 @@ import './Dashboard.css';
 import './Classrooms.css';
 import Sidebar from './Sidebar';
 
+// Import lesson images
+import IFeelImage from '../roversalessons/IFeel.png';
+import UnderwaterMissionImage from '../roversalessons/UnderwaterMission.png';
+import GridChallengesImage from '../roversalessons/GridChallenges.png';
+import DuckDuckRobotImage from '../roversalessons/DuckDuckRobot.png';
+
 function Classrooms() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
@@ -194,21 +200,27 @@ function Classrooms() {
   // Helper to load lessons from Firestore
   const loadLessons = async (user) => {
     if (!user) return;
-    const docRef = doc(db, 'users', user.uid, 'appdata', 'lessons');
+    
+    // Always start with hardcoded default lessons
+    let allLessons = [
+      { id: 'lesson1', title: 'I Feel', overview: 'Code Roversa to move on a grid toward an emotion based on a scenario.', age: 'Pre-K - 2nd', link: 'https://docs.google.com/document/d/15hDBUGjhOFpLSPmmkFJMXMcShzhLqdaBW9WTI3UOFXs/edit?tab=t.0#heading=h.a6lqxihc6dhl', image: IFeelImage },
+      { id: 'lesson2', title: 'Underwater Mission', overview: 'Program Roversa to complete a variety of missions exploring important geological features of the ocean floor.', age: '3rd - 5th', link: 'https://docs.google.com/document/d/1ULP0tlvJSMT7Tjg5rQgMcqaLqZ4ejNO7KtGgwhhurWQ/edit?usp=sharing', image: UnderwaterMissionImage },
+      { id: 'lesson3', title: 'Grid Challenges', overview: 'Code Roversa to move on a grid toward certain objectives.', age: '3rd - 5th', link: 'https://docs.google.com/document/d/1qHoE0t6diltiHJbYG4hKiGGIJOQFLw3rRNMmLgWc-1E/edit?tab=t.0#heading=h.a6lqxihc6dhl', image: GridChallengesImage },
+      { id: 'lesson4', title: 'Duck Duck Robot', overview: 'Match numerals to number of obejcts and solve number facts by coding Roversa to the correct answer.', age: 'Pre-K - 2nd', link: 'https://docs.google.com/document/d/14jte14tL0Txgm1CdY9kZsbov0lZDoqv7UyhECFW8ioI/edit?tab=t.0#heading=h.a6lqxihc6dhl', image: DuckDuckRobotImage },
+    ];
+    
+    // Load any custom lessons from Firebase and append them
+    const docRef = doc(db, 'users', user.uid, 'appdata', 'customLessons');
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
-      setLessons(docSnap.data().lessons || []);
-    } else {
-      setLessons([]);
+      const customLessons = docSnap.data().lessons || [];
+      allLessons = [...allLessons, ...customLessons];
     }
+    
+    setLessons(allLessons);
   };
 
-  // Helper to save lessons to Firestore
-  const saveLessons = async (user, lessonsArr) => {
-    if (!user) return;
-    const docRef = doc(db, 'users', user.uid, 'appdata', 'lessons');
-    await setDoc(docRef, { lessons: lessonsArr });
-  };
+
 
   // Helper to add lesson to classroom
   const handleAddLessonToClassroom = async (classroomId, lessonId) => {

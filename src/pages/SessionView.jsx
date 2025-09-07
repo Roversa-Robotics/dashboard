@@ -137,20 +137,79 @@ function isValidUrl(url) {
 
 // Helper to load sessions from Firestore
 const loadSessions = async (user) => {
-  if (!user) return [];
-  const docRef = doc(db, 'users', user.uid, 'appdata', 'sessions');
-  const docSnap = await getDoc(docRef);
-  if (docSnap.exists()) {
-    return docSnap.data().sessions || [];
+  if (!user) {
+    console.error('No user provided to loadSessions');
+    return [];
   }
-  return [];
+  try {
+    const docRef = doc(db, 'users', user.uid, 'appdata', 'sessions');
+    console.log('Loading sessions from Firebase:', {
+      userId: user.uid,
+      path: `users/${user.uid}/appdata/sessions`
+    });
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      const sessions = docSnap.data().sessions || [];
+      console.log('Loaded sessions from Firebase:', {
+        sessionsCount: sessions.length,
+        sessionIds: sessions.map(s => s.id)
+      });
+      return sessions;
+    }
+    console.log('No sessions found in Firebase');
+    return [];
+  } catch (error) {
+    console.error('Error loading sessions from Firebase:', error);
+    return [];
+  }
 };
+
+// Default lessons constant (moved outside function for scope access)
+const DEFAULT_LESSONS = [
+  { id: 'lesson1', name: 'I Feel' },
+  { id: 'lesson2', name: 'Underwater Mission' },
+  { id: 'lesson3', name: 'Grid Challenges' },
+  { id: 'lesson4', name: 'Duck Duck Robot' },
+];
 
 // Helper to save sessions to Firestore
 const saveSessions = async (user, sessions) => {
-  if (!user) return;
-  const docRef = doc(db, 'users', user.uid, 'appdata', 'sessions');
-  await setDoc(docRef, { sessions });
+  if (!user) {
+    console.error('No user provided to saveSessions');
+    return;
+  }
+  try {
+    const docRef = doc(db, 'users', user.uid, 'appdata', 'sessions');
+    console.log('Saving sessions to Firebase:', {
+      userId: user.uid,
+      sessionsCount: sessions.length,
+      path: `users/${user.uid}/appdata/sessions`
+    });
+    await setDoc(docRef, { sessions });
+    console.log('Successfully saved sessions to Firebase');
+  } catch (error) {
+    console.error('Error saving sessions to Firebase:', error);
+    throw error;
+  }
+};
+
+// Helper to load lessons from Firestore
+const loadLessons = async (user) => {
+  if (!user) return [];
+  
+  // Always start with hardcoded default lessons
+  let allLessons = [...DEFAULT_LESSONS];
+  
+  // Load any custom lessons from Firebase and append them
+  const docRef = doc(db, 'users', user.uid, 'appdata', 'customLessons');
+  const docSnap = await getDoc(docRef);
+  if (docSnap.exists()) {
+    const customLessons = docSnap.data().lessons || [];
+    // Append custom lessons to defaults
+    allLessons = [...allLessons, ...customLessons];
+  }
+  
+  return allLessons;
 };
 
 function SessionView() {
@@ -423,15 +482,11 @@ function SessionView() {
     const savedClassroomId = lastSavedState.classroomId;
     if (currentClassroomId !== savedClassroomId) return true;
     
+    // Compare selected lesson ID
+    if (selectedLessonId !== (lastSavedState.selectedLessonId || 'none')) return true;
+    
     return false;
   };
-
-  // Update hasUnsavedChanges based on actual changes
-  useEffect(() => {
-    const hasChanges = hasActualChanges();
-    setHasUnsavedChanges(hasChanges);
-  }, [robots, receivedData, sessionName, completedRobots, sessionNotes, sessionData]);
-
 
   // Only load session data on first mount
   const hasLoadedSessionRef = useRef(false);
@@ -441,8 +496,20 @@ function SessionView() {
       setIsLoadingSession(true);
       setSessionLoadError(null);
       loadSessions(user).then(savedSessions => {
+        console.log('Loading session on page refresh:', {
+          sessionId: sessionId,
+          totalSessions: savedSessions.length,
+          sessionIds: savedSessions.map(s => s.id)
+        });
         const found = savedSessions.find(s => String(s.id) === String(sessionId));
         if (found) {
+          console.log('Found session data:', {
+            sessionId: found.id,
+            sessionName: found.name,
+            robotsCount: Object.keys(found.robots || {}).length,
+            receivedDataCount: (found.receivedData || []).length,
+            status: found.status
+          });
           setSessionData(found);
           setSessionName(found.name);
           setSessionStatus(found.status);
@@ -450,6 +517,7 @@ function SessionView() {
           setReceivedData(found.receivedData || {});
           setCompletedRobots(new Set(found.completedRobots || []));
           setLessonCompletions(found.lessonCompletions ? Object.fromEntries(Object.entries(found.lessonCompletions).map(([k, v]) => [k, new Set(v)])) : {});
+          setSelectedLessonId(found.selectedLessonId || 'none');
           setSessionNotes(found.sessionNotes || '');
           setIsLoadingSession(false);
           
@@ -461,11 +529,16 @@ function SessionView() {
             sessionNotes: found.sessionNotes || '',
             completedRobots: new Set(found.completedRobots || []),
             lessonCompletions: found.lessonCompletions ? Object.fromEntries(Object.entries(found.lessonCompletions).map(([k, v]) => [k, new Set(v)])) : {},
+            selectedLessonId: found.selectedLessonId || 'none',
             classroomId: found.classroomId || null
           });
           
           // Don't initialize selectedClassroom - let it start as null to show "Select Classroom..."
         } else {
+          console.log('Session not found in Firebase:', {
+            sessionId: sessionId,
+            availableSessions: savedSessions.map(s => s.id)
+          });
           setIsLoadingSession(false);
           setSessionLoadError('Session not found.');
           setTimeout(() => navigate('/sessions'), 2000);
@@ -667,7 +740,7 @@ function SessionView() {
           setReceivedData(prev => [ ...(Array.isArray(prev) ? prev : []), { timestamp, data } ]);
           
           // Immediately save data when new data is received
-          setTimeout(() => autosaveSession(), 100);
+          setTimeout(async () => await autosaveSession(), 100);
         }
         // Check if second part is a button name (button message)
         else if (parts.length >= 2 && ['PLAY', 'TEST'].includes(parts[1])) {
@@ -714,7 +787,7 @@ function SessionView() {
           setReceivedData(prev => [ ...(Array.isArray(prev) ? prev : []), { timestamp, data } ]);
           
           // Immediately save data when new data is received
-          setTimeout(() => autosaveSession(), 100);
+          setTimeout(async () => await autosaveSession(), 100);
           // Set running program duration
           const duration = getProgramDuration(program);
           setRunningPrograms(prev => ({
@@ -750,7 +823,7 @@ function SessionView() {
           setReceivedData(prev => [ ...(Array.isArray(prev) ? prev : []), { timestamp, data } ]);
           
           // Immediately save data when new data is received
-          setTimeout(() => autosaveSession(), 100);
+          setTimeout(async () => await autosaveSession(), 100);
         }
       }
     }
@@ -776,35 +849,7 @@ function SessionView() {
   };
 
   // 1. Add hardcoded lessons and new state for lesson selection and completion
-  const DEFAULT_LESSONS = [
-    { id: 'lesson1', name: 'I Feel' },
-    { id: 'lesson2', name: 'Hungry, Hungry Robot' },
-    { id: 'lesson3', name: 'Grid Challenges' },
-    { id: 'lesson4', name: 'Duck Duck Robot' },
-  ];
-  const [lessons, setLessons] = useState(() => {
-    let loaded = [];
-    try {
-      const saved = localStorage.getItem('roversaLessons');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) {
-          loaded = parsed.map(l => ({
-            id: l.id,
-            name: l.title || l.name || '',
-            link: l.link || '',
-          }));
-        }
-      }
-    } catch {}
-    // Merge with defaults, avoid duplicates by id
-    const merged = [...DEFAULT_LESSONS];
-    loaded.forEach(l => {
-      if (!merged.some(def => def.id === l.id)) merged.push(l);
-    });
-    // Always add 'None' at the top
-    return [{ id: 'none', name: 'None' }, ...merged];
-  });
+  const [lessons, setLessons] = useState([{ id: 'none', name: 'None' }, ...DEFAULT_LESSONS]);
   const [selectedLessonId, setSelectedLessonId] = useState('none');
   // Map of lessonId -> Set of completed robotIds
   const [lessonCompletions, setLessonCompletions] = useState(() => {
@@ -830,34 +875,6 @@ function SessionView() {
     });
   }, [lessons]);
 
-  // Optionally, update lessons if localStorage changes (e.g. user creates a lesson in another tab)
-  useEffect(() => {
-    const onStorage = (e) => {
-      if (e.key === 'roversaLessons') {
-        let loaded = [];
-        try {
-          const saved = localStorage.getItem('roversaLessons');
-          if (saved) {
-            const parsed = JSON.parse(saved);
-            if (Array.isArray(parsed)) {
-              loaded = parsed.map(l => ({
-                id: l.id,
-                name: l.title || l.name || '',
-                link: l.link || '',
-              }));
-            }
-          }
-        } catch {}
-        const merged = [...DEFAULT_LESSONS];
-        loaded.forEach(l => {
-          if (!merged.some(def => def.id === l.id)) merged.push(l);
-        });
-        setLessons([{ id: 'none', name: 'None' }, ...merged]);
-      }
-    };
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
-  }, []);
 
   // Replace toggleRobotCompletion to be per-lesson
   const toggleRobotCompletion = (deviceId) => {
@@ -870,6 +887,59 @@ function SessionView() {
         setCopy.add(deviceId);
       }
       updated[selectedLessonId] = setCopy;
+      // Persist to Firestore and reload session
+      if (sessionData && sessionData.id) {
+        // Convert sets to arrays for Firestore
+        const completionsToSave = Object.fromEntries(
+          Object.entries(updated).map(([k, v]) => [k, Array.from(v)])
+        );
+        const updatedSession = { ...sessionData, lessonCompletions: completionsToSave };
+        loadSessions(user).then(async sessions => {
+          const idx = sessions.findIndex(s => String(s.id) === String(sessionData.id));
+          if (idx >= 0) {
+            sessions[idx] = updatedSession;
+          } else {
+            sessions.push(updatedSession);
+          }
+          await saveSessions(user, sessions);
+          // Reload session from Firestore
+          const freshSessions = await loadSessions(user);
+          const found = freshSessions.find(s => String(s.id) === String(sessionData.id));
+          if (found && found.lessonCompletions) {
+            setLessonCompletions(
+              Object.fromEntries(
+                Object.entries(found.lessonCompletions).map(([k, v]) => [k, new Set(v)])
+              )
+            );
+          }
+        });
+      }
+      return updated;
+    });
+  };
+
+  // Bulk completion toggle for multiple selected robots
+  const toggleBulkRobotCompletion = () => {
+    if (selectedRobotsForTagging.size === 0) return;
+    
+    setLessonCompletions(prev => {
+      const updated = { ...prev };
+      const setCopy = new Set(updated[selectedLessonId]);
+      
+      // Check if all selected robots are completed
+      const allSelectedDone = Array.from(selectedRobotsForTagging).every(id => setCopy.has(id));
+      
+      // Toggle all selected robots
+      selectedRobotsForTagging.forEach(deviceId => {
+        if (allSelectedDone) {
+          setCopy.delete(deviceId);
+        } else {
+          setCopy.add(deviceId);
+        }
+      });
+      
+      updated[selectedLessonId] = setCopy;
+      
       // Persist to Firestore and reload session
       if (sessionData && sessionData.id) {
         // Convert sets to arrays for Firestore
@@ -1109,32 +1179,23 @@ function SessionView() {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (!user) return;
       
-      // Load lessons from Firestore
-      const docRef = doc(db, 'users', user.uid, 'appdata', 'lessons');
-      const docSnap = await getDoc(docRef);
-      let loaded = [];
-      if (docSnap.exists()) {
-        const data = docSnap.data().lessons || [];
-        loaded = data.map(l => ({
-          id: l.id,
-          name: l.title || l.name || '',
-          link: l.link || '',
-        }));
-      }
+      // Load all lessons from Firebase
+      const allLessons = await loadLessons(user);
       
       // Store loaded lessons for later filtering
-      setLoadedLessons(loaded);
+      setLoadedLessons(allLessons);
     });
     return () => unsubscribe();
   }, []);
 
   // Filter lessons based on sessionData and classrooms
   useEffect(() => {
-    if (!loadedLessons) return;
+    if (!loadedLessons || loadedLessons.length === 0) return;
     
     // If session has a classroom, use classroom-specific lessons
     if (sessionData && sessionData.classroomId) {
       const classroom = getClassroomById(sessionData.classroomId);
+      
       if (classroom) {
         const classroomLessons = classroom.lessons || [];
         const classroomLessonIds = classroomLessons.map(l => l.id);
@@ -1142,15 +1203,30 @@ function SessionView() {
         // Filter loaded lessons to only include classroom lessons
         const filteredLessons = loadedLessons.filter(l => classroomLessonIds.includes(l.id));
         
+        // Convert lesson objects to have 'name' property for dropdown
+        const lessonsForDropdown = filteredLessons.map(lesson => ({
+          id: lesson.id,
+          name: lesson.title || lesson.name || '',
+          link: lesson.link || ''
+        }));
+        
         // Only include lessons that are specifically assigned to the classroom
-        setLessons([{ id: 'none', name: 'None' }, ...filteredLessons]);
+        setLessons([{ id: 'none', name: 'None' }, ...lessonsForDropdown]);
       } else {
         // Classroom not found, use all lessons
         const merged = [...DEFAULT_LESSONS];
         loadedLessons.forEach(l => {
           if (!merged.some(def => def.id === l.id)) merged.push(l);
         });
-        setLessons([{ id: 'none', name: 'None' }, ...merged]);
+        
+        // Convert lesson objects to have 'name' property for dropdown
+        const lessonsForDropdown = merged.map(lesson => ({
+          id: lesson.id,
+          name: lesson.title || lesson.name || '',
+          link: lesson.link || ''
+        }));
+        
+        setLessons([{ id: 'none', name: 'None' }, ...lessonsForDropdown]);
       }
     } else {
       // Use all lessons if no classroom is associated
@@ -1158,7 +1234,15 @@ function SessionView() {
       loadedLessons.forEach(l => {
         if (!merged.some(def => def.id === l.id)) merged.push(l);
       });
-      setLessons([{ id: 'none', name: 'None' }, ...merged]);
+      
+      // Convert lesson objects to have 'name' property for dropdown
+      const lessonsForDropdown = merged.map(lesson => ({
+        id: lesson.id,
+        name: lesson.title || lesson.name || '',
+        link: lesson.link || ''
+      }));
+      
+      setLessons([{ id: 'none', name: 'None' }, ...lessonsForDropdown]);
     }
   }, [sessionData, classrooms, loadedLessons]);
 
@@ -1277,9 +1361,9 @@ function SessionView() {
 
   // Frequent autosave every 5 seconds
   useEffect(() => {
-    const autosaveInterval = setInterval(() => {
+    const autosaveInterval = setInterval(async () => {
       if (sessionStatus === 'active' && sessionData) {
-        autosaveSession();
+        await autosaveSession();
       }
     }, 5000);
 
@@ -1345,41 +1429,48 @@ function SessionView() {
   }, [sessionName, sessionStatus, sessionData?.id]);
 
   // Dedicated autosave function
-  const autosaveSession = () => {
+  const autosaveSession = async () => {
     try {
       if ((sessionStatus === 'active' || sessionStatus === 'paused' || sessionStatus === 'ended') && sessionData && sessionData.id) {
-        loadSessions(user).then(savedSessions => {
-          const updatedSession = {
-            ...sessionData,
-            name: sessionName,
-            status: sessionStatus,
-            robots: robots,
-            receivedData: receivedData,
-            sessionNotes: sessionNotes,
-            completedRobots: Array.from(completedRobots),
-            lessonCompletions: Object.fromEntries(
-              Object.entries(lessonCompletions).map(([k, v]) => [k, Array.from(v)])
-            ),
-            lastUpdated: new Date().toISOString()
-          };
-          const existingIndex = savedSessions.findIndex(s => String(s.id) === String(sessionData.id));
-          if (existingIndex >= 0) {
-            savedSessions[existingIndex] = updatedSession;
-          } else {
-            savedSessions.push(updatedSession);
-          }
-          saveSessions(user, savedSessions);
-          // Update last saved state after successful save
-          setLastSavedState({
-            robots: robots,
-            receivedData: receivedData,
-            sessionName: sessionName,
-            sessionNotes: sessionNotes,
-            completedRobots: completedRobots,
-            lessonCompletions: Object.fromEntries(
-              Object.entries(lessonCompletions).map(([k, v]) => [k, Array.from(v)])
-            )
-          });
+        const savedSessions = await loadSessions(user);
+        const updatedSession = {
+          ...sessionData,
+          name: sessionName,
+          status: sessionStatus,
+          robots: robots,
+          receivedData: receivedData,
+          sessionNotes: sessionNotes,
+          completedRobots: Array.from(completedRobots),
+          lessonCompletions: Object.fromEntries(
+            Object.entries(lessonCompletions).map(([k, v]) => [k, Array.from(v)])
+          ),
+          selectedLessonId: selectedLessonId,
+          lastUpdated: new Date().toISOString()
+        };
+        const existingIndex = savedSessions.findIndex(s => String(s.id) === String(sessionData.id));
+        if (existingIndex >= 0) {
+          savedSessions[existingIndex] = updatedSession;
+        } else {
+          savedSessions.push(updatedSession);
+        }
+        await saveSessions(user, savedSessions);
+        // Update last saved state after successful save
+        setLastSavedState({
+          robots: robots,
+          receivedData: receivedData,
+          sessionName: sessionName,
+          sessionNotes: sessionNotes,
+          completedRobots: completedRobots,
+          lessonCompletions: Object.fromEntries(
+            Object.entries(lessonCompletions).map(([k, v]) => [k, Array.from(v)])
+          )
+        });
+        console.log('Session autosaved successfully');
+        console.log('Saved session data:', {
+          sessionId: sessionData.id,
+          robotsCount: Object.keys(robots).length,
+          receivedDataCount: receivedData.length,
+          sessionName: sessionName
         });
       }
     } catch (error) {
@@ -1801,6 +1892,7 @@ function SessionView() {
           lessonCompletions: Object.fromEntries(
             Object.entries(lessonCompletions).map(([k, v]) => [k, Array.from(v)])
           ),
+          selectedLessonId: selectedLessonId,
           sessionNotes: sessionNotes,
           lastUpdated: new Date().toISOString()
         };
@@ -1887,8 +1979,9 @@ function SessionView() {
                 style={{
                   width: '100%',
                   display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'flex-start',
+                  flexDirection: 'row',
+                  alignItems: 'stretch',
+                  justifyContent: 'space-between',
                   padding: '20px 24px 36px 24px',
                   background: highlightedRobot === robot.deviceId ? '#e3eafe' : (lessonCompletions[selectedLessonId]?.has(robot.deviceId) ? '#f8f9ff' : '#fff'),
                   borderRadius: '16px',
@@ -1900,7 +1993,7 @@ function SessionView() {
                   cursor: 'pointer',
                   position: 'relative',
                   overflow: 'visible',
-                  gap: '18px',
+                  gap: '20px',
                   minHeight: '180px',
                   height: '180px',
                 }}
@@ -2047,8 +2140,8 @@ function SessionView() {
                     </div>
                   </div>
                 </div>
-                {/* Left column: robot info, actions, assignment */}
-                <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'flex-start', flex: 1, minWidth: 0, gap: '18px' }}>
+                {/* Left side: robot info, actions, assignment */}
+                <div style={{ display: 'flex', flexDirection: 'row', alignItems: 'center', flex: 1, minWidth: 0, gap: '18px' }}>
                   {/* Selection checkbox */}
                   <div
                     onClick={e => {
@@ -2096,7 +2189,7 @@ function SessionView() {
                   />
                   {/* Info and actions */}
                   <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '12px', minWidth: 0 }}>
-                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <span 
                         className="robot-card-device-id" 
                         onClick={e => e.stopPropagation()}
@@ -2104,7 +2197,7 @@ function SessionView() {
                           fontWeight: lessonCompletions[selectedLessonId]?.has(robot.deviceId) ? '600' : '500',
                           color: lessonCompletions[selectedLessonId]?.has(robot.deviceId) ? '#124EAF' : '#222',
                           transition: 'all 0.3s ease',
-                          minHeight: '22px',
+                          height: '22px',
                           display: 'inline-flex',
                           alignItems: 'center'
                         }}
@@ -2114,7 +2207,7 @@ function SessionView() {
                       {robot.assignedTo ? (
                         <span style={{
                           minWidth: '120px',
-                          minHeight: '22px',
+                          height: '22px',
                           maxWidth: '200px',
                           display: 'inline-flex',
                           alignItems: 'center',
@@ -2131,6 +2224,8 @@ function SessionView() {
                           padding: '3px 10px',
                           cursor: 'default',
                           gap: '8px',
+                          position: 'relative',
+                          top: '-4px'
                         }}>
                           <span style={{
                             overflow: 'hidden',
@@ -2206,7 +2301,11 @@ function SessionView() {
                         <button
                           onClick={e => {
                             e.stopPropagation();
-                            toggleRobotCompletion(robot.deviceId);
+                            if (selectedRobotsForTagging.size > 0) {
+                              toggleBulkRobotCompletion();
+                            } else {
+                              toggleRobotCompletion(robot.deviceId);
+                            }
                           }}
                           style={{
                             padding: '6px 12px',
@@ -2227,12 +2326,23 @@ function SessionView() {
                               ? '0 2px 8px rgba(39, 75, 181, 0.3)'
                               : '0 1px 4px rgba(65, 105, 225, 0.2)'
                           }}
-                          title={lessonCompletions[selectedLessonId]?.has(robot.deviceId) ? 'Mark as incomplete' : 'Mark as done'}
+                          title={
+                            selectedRobotsForTagging.size > 0 
+                              ? (Array.from(selectedRobotsForTagging).every(id => lessonCompletions[selectedLessonId]?.has(id)) ? 'Mark all selected as incomplete' : 'Mark all selected as done')
+                              : (lessonCompletions[selectedLessonId]?.has(robot.deviceId) ? 'Mark as incomplete' : 'Mark as done')
+                          }
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '14px', height: '14px' }}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                           </svg>
-                          {lessonCompletions[selectedLessonId]?.has(robot.deviceId) ? 'Undo Done' : 'Mark as Done'}
+                          {(() => {
+                            if (selectedRobotsForTagging.size > 0) {
+                              const allSelectedDone = Array.from(selectedRobotsForTagging).every(id => lessonCompletions[selectedLessonId]?.has(id));
+                              return allSelectedDone ? 'Undo Done' : 'Mark As Done';
+                            } else {
+                              return lessonCompletions[selectedLessonId]?.has(robot.deviceId) ? 'Undo Done' : 'Mark as Done';
+                            }
+                          })()}
                         </button>
                       )}
                       
@@ -2259,7 +2369,7 @@ function SessionView() {
                               fontWeight: '500',
                               color: '#fff',
                               height: '32px',
-                              minWidth: '100px',
+                              minWidth: '10px',
                               boxShadow: '0 1px 4px rgba(162, 89, 225, 0.2)'
                             }}
                             title="Edit robot tags"
@@ -2316,8 +2426,18 @@ function SessionView() {
                     </div>
                   </div>
                 </div>
-                {/* Right column: Latest Program */}
-                <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', alignItems: 'flex-end', marginRight: '200px' }}>
+                {/* Right side: Latest Program */}
+                <div style={{ 
+                  minWidth: 0, 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  justifyContent: 'flex-start', 
+                  alignItems: 'flex-end', 
+                  width: '280px', 
+                  flexShrink: 0,
+                  marginLeft: '20px',
+                  paddingRight: '40px'
+                }}>
                   {(() => {
                     const latestProgram = getLatestProgram(robot.deviceId);
                     if (!latestProgram) {
@@ -2364,7 +2484,7 @@ function SessionView() {
                               <span style={{ fontSize: '0.65rem', color: '#666', background: '#e3eafe', padding: '1px 4px', borderRadius: '3px', fontWeight: '500' }}>{latestProgram.button}</span>
                             )}
                           </div>
-                          <span style={{ fontSize: '0.65rem', color: '#888' }}>
+                          <span style={{ fontSize: '0.58rem', color: '#888' }}>
                             {formatDateTime(latestProgram.timestamp)}
                           </span>
                         </div>
@@ -2455,7 +2575,7 @@ function SessionView() {
                 borderRadius: '12px',
                 border: '2px dashed #e0e0e0'
               }}>
-                No robots detected yet. Connect to micro:bit and send some data.
+                No robots detected yet. Connect to your micro:bit to send some data.
               </div>
             );
           }
@@ -2806,7 +2926,7 @@ function SessionView() {
   // Add a mapping from lessonId to Google Doc links
   const LESSON_LINKS = {
     lesson1: 'https://docs.google.com/document/d/15hDBUGjhOFpLSPmmkFJMXMcShzhLqdaBW9WTI3UOFXs/edit?tab=t.0#heading=h.a6lqxihc6dhl',
-    lesson2: 'https://docs.google.com/document/d/13E9Lz6l0eP4ZT-kJBxJST35SX4427fOw6XLlfcZpwm0/edit?tab=t.0#heading=h.a6lqxihc6dhl',
+    lesson2: 'https://docs.google.com/document/d/1ULP0tlvJSMT7Tjg5rQgMcqaLqZ4ejNO7KtGgwhhurWQ/edit?usp=sharing',
     lesson3: 'https://docs.google.com/document/d/1qHoE0t6diltiHJbYG4hKiGGIJOQFLw3rRNMmLgWc-1E/edit?tab=t.0#heading=h.a6lqxihc6dhl',
     lesson4: 'https://docs.google.com/document/d/14jte14tL0Txgm1CdY9kZsbov0lZDoqv7UyhECFW8ioI/edit?tab=t.0#heading=h.a6lqxihc6dhl',
   };
@@ -2850,6 +2970,12 @@ function SessionView() {
 
   const [isLoadingSession, setIsLoadingSession] = useState(false);
   const [sessionLoadError, setSessionLoadError] = useState(null);
+
+  // Update hasUnsavedChanges based on actual changes
+  useEffect(() => {
+    const hasChanges = hasActualChanges();
+    setHasUnsavedChanges(hasChanges);
+  }, [robots, receivedData, sessionName, completedRobots, sessionNotes, sessionData, selectedLessonId]);
 
   // After all useState hooks, before other useEffects
 useEffect(() => {
@@ -3153,7 +3279,7 @@ useEffect(() => {
               Sessions
             </button>
             <div style={{ display: 'flex', alignItems: 'center', gap: 20, flex: 1 }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1, position: 'relative' }}>
                 {/* Session Name Header */}
                 <div style={{ 
                   fontFamily: 'Space Mono, monospace', 
@@ -3162,10 +3288,21 @@ useEffect(() => {
                   color: '#666', 
                   textTransform: 'uppercase',
                   letterSpacing: '0.5px',
-                  textDecoration: 'underline',
-                  textUnderlineOffset: '6px'
+                  textAlign: 'left',
+                  marginBottom: '8px',
+                  position: 'relative'
                 }}>
                   Session Name
+                  {/* Custom underline that spans the full width of the title box */}
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '-6px',
+                    left: '0',
+                    width: '250px',
+                    height: '1px',
+                    background: '#666',
+                    borderRadius: '1px'
+                  }} />
                 </div>
                 <input
                   type="text"
@@ -3192,7 +3329,7 @@ useEffect(() => {
                   }}
                 />
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10, position: 'relative' }}>
                 {/* Session Controls Header */}
                 <div style={{ 
                   fontFamily: 'Space Mono, monospace', 
@@ -3201,12 +3338,25 @@ useEffect(() => {
                   color: '#666', 
                   textTransform: 'uppercase',
                   letterSpacing: '0.5px',
-                  textDecoration: 'underline',
-                  textUnderlineOffset: '6px'
+                  textAlign: 'center',
+                  marginBottom: '8px',
+                  position: 'relative'
                 }}>
                   Session Controls
+                  {/* Custom underline that spans the full width */}
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '-6px',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: 'calc(100vw - 200px)',
+                    maxWidth: '400px',
+                    height: '1px',
+                    background: '#666',
+                    borderRadius: '1px'
+                  }} />
                 </div>
-                <div style={{ display: 'flex', gap: 12 }}>
+                <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
                   {/* Session Management Section */}
                   {(sessionStatus === 'active' || sessionStatus === 'paused' || sessionStatus === 'ended') && (
                     <>
@@ -3369,7 +3519,7 @@ useEffect(() => {
                 {/* Connection Section */}
                 <div className="session-section fade-in-scale animate-on-mount-delay-1">
                   <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => toggleSection('connection')}>
-                    <h2>Connection</h2>
+                  <h2 style={{ fontWeight: '700' }}>Connection</h2>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -3414,7 +3564,7 @@ useEffect(() => {
                           <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 9.75a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 0 1 .778-.332 48.294 48.294 0 0 0 5.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
                         </svg>
                         {/* header tip */}
-                        <p style={{ margin: 0, color: '#666', fontSize: '12px', lineHeight: '1.4', fontFamily: 'Space Mono, monospace' }}>
+                        <p style={{ margin: 0, color: '#666', fontSize: '14px', lineHeight: '1.4', fontFamily: 'Inter, sans-serif !important' }}>
                           Plug in your receiver micro:bit to your computer and click the button below to connect.
                         </p>
                       </div>
@@ -3452,7 +3602,7 @@ useEffect(() => {
                 {/* Lesson Progress Section */}
                 <div className="session-section fade-in-scale animate-on-mount-delay-2">
                   <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => toggleSection('lessonProgress')}>
-                    <h2>Lesson Progress</h2>
+                    <h2 style={{ fontWeight: '700' }}>Lesson Progress</h2>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -3497,7 +3647,7 @@ useEffect(() => {
                           <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 9.75a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 0 1 .778-.332 48.294 48.294 0 0 0 5.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
                         </svg>
                         {/* header tip */}
-                        <p style={{ margin: 0, color: '#666', fontSize: '12px', lineHeight: '1.4', fontFamily: 'Space Mono, monospace' }}>
+                        <p style={{ margin: 0, color: '#666', fontSize: '14px', lineHeight: '1.4', fontFamily: 'Space Mono, monospace' }}>
                           Select a lesson and track your students' progress. When you mark a student as complete, the progress bar will update.
                         </p>
                       </div>
@@ -3539,11 +3689,18 @@ useEffect(() => {
                               border: 'none',
                               boxShadow: '0 2px 8px rgba(65, 105, 225, 0.10)',
                               cursor: 'pointer',
-                              marginBottom: 0
+                              marginBottom: 0,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '8px',
+                              height: '40px'
                             }}
                             onClick={() => setShowLessonHistoryModal(true)}
                           >
                             Lesson History
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '18px', height: '18px' }}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
+                            </svg>
                           </button>
                           <button
                             style={{
@@ -3560,6 +3717,7 @@ useEffect(() => {
                               display: 'flex',
                               alignItems: 'center',
                               gap: 6,
+                              height: '40px',
                               transition: 'background 0.2s, color 0.2s, border 0.2s',
                             }}
                             disabled={selectedLessonId === 'none' || !LESSON_LINKS[selectedLessonId]}
@@ -3663,7 +3821,7 @@ useEffect(() => {
                   style={{ minWidth: 0, height: minimizedSections.robotsAndPrograms ? 'auto' : '600px', overflow: 'hidden' }}
                 >
                   <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => toggleSection('robotsAndPrograms')}>
-                    <h2>Robots</h2>
+                    <h2 style={{ fontWeight: '700' }}>Robots</h2>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -3709,7 +3867,7 @@ useEffect(() => {
                           <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 9.75a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 0 1 .778-.332 48.294 48.294 0 0 0 5.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
                         </svg>
                         {/* header tip */}
-                        <p style={{ margin: 0, color: '#666', fontSize: '12px', lineHeight: '1.4', fontFamily: 'Space Mono, monospace' }}>
+                        <p style={{ margin: 0, color: '#666', fontSize: '14px', lineHeight: '1.4', fontFamily: 'Space Mono, monospace' }}>
                           Once you have connected your micro:bit, robots that have sent data will appear here.
                         </p>
                       </div>
@@ -3724,9 +3882,10 @@ useEffect(() => {
                           <div style={{ marginBottom: '20px', flexShrink: 0 }}>
                             <h3 style={{ 
                               fontSize: '1.1rem', 
-                              fontWeight: '600', 
+                              fontWeight: '400', 
                               color: '#222',
-                              marginBottom: '0px'
+                              marginBottom: '0px',
+                              fontFamily: 'Bevan, serif !important',
                             }}>
                               Robots ({(() => {
                                 const filteredRobots = getFilteredRobots();
@@ -3737,7 +3896,7 @@ useEffect(() => {
                             </h3>
                           </div>
                           {/* Search bar and bulk action buttons positioned under the header */}
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px', padding: '12px 0', flexShrink: 0 }}>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px', padding: '0px 0', flexShrink: 0 }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '16px', height: '16px', color: '#666' }}>
                                 <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
@@ -3859,28 +4018,29 @@ useEffect(() => {
                                       transition: 'background 0.2s'
                                     }}
                                     onClick={() => {
-                                      setCompletedRobots(prev => {
-                                        const newSet = new Set(prev);
-                                        const allSelectedDone = Array.from(selectedRobotsForTagging).every(id => completedRobots.has(id));
-                                        if (allSelectedDone) {
-                                          selectedRobotsForTagging.forEach(id => newSet.delete(id));
-                                        } else {
-                                          selectedRobotsForTagging.forEach(id => newSet.add(id));
-                                        }
-                                        return newSet;
-                                      });
+                                      toggleBulkRobotCompletion();
                                     }}
                                   >
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '14px', height: '14px' }}>
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
                                     </svg>
-                                    {allSelectedDone ? 'Undo Done' : 'Mark as Done'}
+                                    {(() => {
+                                      const allSelectedDone = Array.from(selectedRobotsForTagging).every(id => lessonCompletions[selectedLessonId]?.has(id));
+                                      return allSelectedDone ? 'Undo Done' : 'Mark as Done';
+                                    })()}
                                   </button>
                                 )}
-                                {selectedClassroom && (
-                                  <button 
+                                {sessionData && sessionData.classroomId && getClassroomById(sessionData.classroomId) && (
+                                  <button
                                     className="fade-in-scale animate-on-mount-delay-5"
-                                    onClick={openTagModal}
+                                    onClick={() => {
+                                      // Set the first selected robot as the target for assignment modal
+                                      const firstSelectedRobot = Array.from(selectedRobotsForTagging)[0];
+                                      if (firstSelectedRobot) {
+                                        setSelectedRobotForAssignment(firstSelectedRobot);
+                                        setShowAssignmentModal(true);
+                                      }
+                                    }}
                                     style={{
                                       display: 'flex',
                                       alignItems: 'center',
@@ -3897,7 +4057,14 @@ useEffect(() => {
                                       transition: 'background 0.2s'
                                     }}
                                   >
-                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '14px', height: '14px' }}>
+                                    <svg 
+                                      xmlns="http://www.w3.org/2000/svg" 
+                                      fill="none" 
+                                      viewBox="0 0 24 24" 
+                                      strokeWidth={1.5} 
+                                      stroke="currentColor" 
+                                      style={{ width: '14px', height: '14px' }}
+                                    >
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.732.699 2.431 0l4.318-4.318c.699-.699.699-1.732 0-2.431L9.568 3Z" />
                                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6Z" />
                                     </svg>
@@ -3921,7 +4088,7 @@ useEffect(() => {
                 {/* Cumulative Data Section */}
                 <div className="session-section fade-in-scale animate-on-mount-delay-4">
                   <div className="section-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }} onClick={() => toggleSection('dataReceived')}>
-                    <h2>Logs ({receivedData.length})</h2>
+                    <h2 style={{ fontWeight: '700' }}>Logs ({receivedData.length})</h2>
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
@@ -3966,7 +4133,7 @@ useEffect(() => {
                           <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 9.75a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 0 1 .778-.332 48.294 48.294 0 0 0 5.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
                         </svg>
                         {/* header tip */}
-                        <p style={{ margin: 0, color: '#666', fontSize: '12px', lineHeight: '1.4', fontFamily: 'Space Mono, monospace' }}>
+                        <p style={{ margin: 0, color: '#666', fontSize: '14px', lineHeight: '1.4', fontFamily: 'Space Mono, monospace' }}>
                           View data being sent to your receiver micro:bit in real-time.
                         </p>
                       </div>
@@ -4195,7 +4362,7 @@ useEffect(() => {
                       marginBottom: '20px',
                       lineHeight: '1.5'
                     }}>
-                      Change the classroom associated with this session. When you apply the change, <strong>all robot assignments will be cleared.</strong> Select a new classroom and click "Apply Classroom Change" to confirm.
+                      Change the classroom associated with this session. When you apply the change, <strong>all robot assignments will be cleared.</strong> Select a new classroom and be sure to save the session to confirm.
                     </p>
                     
                     <div style={{ marginBottom: '16px' }}>
@@ -4214,9 +4381,10 @@ useEffect(() => {
                           color: '#fff',
                           borderRadius: '6px',
                           fontSize: '14px',
-                          fontWeight: '500'
+                          fontWeight: '300'
                         }}>
-                          Current Classroom: {getClassroomById(sessionData.classroomId)?.name}
+                          <span className="classroom-label" style={{ fontFamily: 'Space Mono, monospace !important' }}>Current Classroom: </span>
+                          <span className="classroom-name" style={{ fontFamily: 'Space Mono, monospace !important' }}>{getClassroomById(sessionData.classroomId)?.name}</span>
                         </div>
                       ) : (
                         <div style={{
@@ -4228,7 +4396,7 @@ useEffect(() => {
                           fontSize: '14px',
                           fontWeight: '500'
                         }}>
-                          No classroom assigned
+                          <span className="classroom-label" style={{ fontFamily: 'Space Mono, monospace !important' }}>No classroom assigned </span>
                         </div>
                       )}
                     </div>
@@ -4267,7 +4435,7 @@ useEffect(() => {
                     </div>
                     
                     {/* Apply button for classroom change */}
-                    <div style={{ marginTop: '12px' }}>
+                    {/* <div style={{ marginTop: '12px' }}>
                       <button
                         onClick={applyClassroomChange}
                         disabled={!hasUnsavedChanges}
@@ -4287,7 +4455,7 @@ useEffect(() => {
                       >
                         {hasUnsavedChanges ? 'Apply Classroom Change' : 'No Changes to Apply'}
                       </button>
-                    </div>
+                    </div> */}
                   </div>
                   
                   {/* Session Information */}
@@ -4337,7 +4505,12 @@ useEffect(() => {
         <div className="modal-overlay" onClick={() => setShowAssignmentModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px' }}>
             <div className="modal-header">
-              <h2>Assign Robot: {selectedRobotForAssignment}</h2>
+              <h2>
+                {selectedRobotsForTagging.size > 0 
+                  ? `Assign ${selectedRobotsForTagging.size} Robot${selectedRobotsForTagging.size !== 1 ? 's' : ''}`
+                  : `Assign Robot: ${selectedRobotForAssignment}`
+                }
+              </h2>
               <button className="modal-close" onClick={() => setShowAssignmentModal(false)}>
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="20" height="20">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -4350,7 +4523,16 @@ useEffect(() => {
                 <select
                   onChange={(e) => {
                     if (e.target.value) {
-                      assignRobotToStudent(selectedRobotForAssignment, e.target.value);
+                      if (selectedRobotsForTagging.size > 0) {
+                        // Bulk assignment
+                        selectedRobotsForTagging.forEach(deviceId => {
+                          assignRobotToStudent(deviceId, e.target.value);
+                        });
+                        setSelectedRobotsForTagging(new Set());
+                      } else {
+                        // Single assignment
+                        assignRobotToStudent(selectedRobotForAssignment, e.target.value);
+                      }
                       setShowAssignmentModal(false);
                     }
                   }}
@@ -4378,7 +4560,16 @@ useEffect(() => {
                 <select
                   onChange={(e) => {
                     if (e.target.value) {
-                      assignRobotToGroup(selectedRobotForAssignment, e.target.value);
+                      if (selectedRobotsForTagging.size > 0) {
+                        // Bulk assignment
+                        selectedRobotsForTagging.forEach(deviceId => {
+                          assignRobotToGroup(deviceId, e.target.value);
+                        });
+                        setSelectedRobotsForTagging(new Set());
+                      } else {
+                        // Single assignment
+                        assignRobotToGroup(selectedRobotForAssignment, e.target.value);
+                      }
                       setShowAssignmentModal(false);
                     }
                   }}
@@ -4401,21 +4592,34 @@ useEffect(() => {
                 </select>
               </div>
 
-              {robots[selectedRobotForAssignment]?.assignedTo && (
+              {(selectedRobotsForTagging.size > 0 ? 
+                Array.from(selectedRobotsForTagging).some(id => robots[id]?.assignedTo) : 
+                robots[selectedRobotForAssignment]?.assignedTo) && (
                 <div style={{ marginTop: '20px', padding: '12px', background: '#fff3cd', borderRadius: '6px', border: '1px solid #ffeaa7' }}>
-                  {/* <h4 style={{ margin: '0 0 8px 0', color: '#856404' }}>Current Assignment</h4> */}
                   <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: '16px', height: '16px', marginRight: '6px' }}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z" />
                       <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6Z" />
                     </svg>
                     <p style={{ margin: '0', color: '#856404' }}>
-                      Currently assigned to: {robots[selectedRobotForAssignment].assignedTo.name}
+                      {selectedRobotsForTagging.size > 0 
+                        ? `Some selected robots are already assigned`
+                        : `Currently assigned to: ${robots[selectedRobotForAssignment].assignedTo.name}`
+                      }
                     </p>
                   </div>
                   <button
                     onClick={() => {
-                      unassignRobot(selectedRobotForAssignment);
+                      if (selectedRobotsForTagging.size > 0) {
+                        // Bulk unassign
+                        selectedRobotsForTagging.forEach(deviceId => {
+                          unassignRobot(deviceId);
+                        });
+                        setSelectedRobotsForTagging(new Set());
+                      } else {
+                        // Single unassign
+                        unassignRobot(selectedRobotForAssignment);
+                      }
                       setShowAssignmentModal(false);
                     }}
                     style={{
@@ -4430,7 +4634,7 @@ useEffect(() => {
                       fontFamily: 'monospace'
                     }}
                   >
-                    Unassign Robot
+                    {selectedRobotsForTagging.size > 0 ? 'Unassign All Selected' : 'Unassign Robot'}
                   </button>
                 </div>
               )}
@@ -4809,17 +5013,19 @@ useEffect(() => {
                 alt="Robot"
                 className="program-animation-robot"
                 style={{
+                  position: 'absolute',
                   left: 32 + (robotAnimState.x + robotAnimState.offsetX) * (256 / (robotAnimState.gridSize - 1)) - (30 * robotAnimState.robotScale),
                   top: 32 + (robotAnimState.y + robotAnimState.offsetY) * (256 / (robotAnimState.gridSize - 1)) - (35 * robotAnimState.robotScale),
                   width: 60 * robotAnimState.robotScale,
                   height: 70 * robotAnimState.robotScale,
                   zIndex: 2,
-                  transform: `rotate(${robotAnimState.dir * 90}deg)`
+                  transform: `rotate(${robotAnimState.dir * 90}deg)`,
+                  transition: 'all 0.3s ease'
                 }}
               />
             </div>
             {/* Controls */}
-            <div style={{ display: 'flex', gap: 16, marginTop: 24, alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', gap: 16, marginTop: 24, alignItems: 'center', justifyContent: 'center', marginBottom: 30 }}>
               <button onClick={() => stepRobotAnim(false)} disabled={robotAnimState.step === 0} style={{ padding: 8, borderRadius: 8, border: '1px solid #ccc', background: '#f7f9fb', cursor: robotAnimState.step === 0 ? 'not-allowed' : 'pointer' }}>
                 {/* Backward SVG */}
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 28, height: 28, opacity: robotAnimState.step === 0 ? 0.4 : 1 }}>
@@ -4950,11 +5156,11 @@ useEffect(() => {
         <div className="modal-overlay" onClick={() => setShowInactivityModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div style={{ marginBottom: 0, textAlign: 'center' }}>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 60, height: 60, color: '#124EAF', margin: '0 auto' }}>
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" style={{ width: 60, height: 60, color: '#124EAF', margin: '20px auto' }}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
               </svg>
             </div>
-            <div className="modal-header" style={{ display: 'block', textAlign: 'center', justifyContent: 'center' }}>
+            <div className="modal-header" style={{ display: 'block', textAlign: 'center', justifyContent: 'center', marginTop: 0, paddingTop: 0 }}>
               <h2>Session Paused</h2>
             </div>
             <div className="modal-body" style={{ marginBottom: 0, textAlign: 'center' }}>

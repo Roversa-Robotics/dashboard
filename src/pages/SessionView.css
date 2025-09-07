@@ -1,4 +1,66 @@
 /* Session View Styles */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+
+/* Override the global font variable for this page */
+.session-view-content {
+  --font-body: 'Inter', sans-serif !important;
+}
+
+/* Specific override for connection tip text */
+.session-view-content p {
+  font-family: 'Inter', sans-serif !important;
+}
+
+/* Override h3 elements to use Inter instead of Sniglet - more specific */
+.session-view-content h3,
+.session-view-content .section-header h3,
+.session-view-content .robots-section h3 {
+  font-family: 'Bevan', serif !important;
+  font-weight: 600 !important;
+}
+
+/* Even more specific override to beat fonts.css */
+.session-view-content .session-tabs h3,
+.session-view-content .robots-and-programs h3,
+.session-view-content .section-header h3 {
+  font-family: 'Bevan', serif !important;
+  font-weight: 600 !important;
+}
+
+/* Override classroom header div to use Bevan - more specific selectors */
+.session-view-content div[style*="Current Classroom"],
+.session-view-content .session-settings div,
+.session-view-content .modal-body div {
+  font-family: 'Bevan', serif !important;
+}
+
+/* Specific rules for classroom label and name - more aggressive overrides */
+.session-view-content .classroom-label,
+.session-view-content span.classroom-label {
+  font-family: 'Space Mono', monospace !important;
+  font-weight: 500 !important;
+}
+
+.session-view-content .classroom-name,
+.session-view-content span.classroom-name {
+  font-family: 'Space Mono', monospace !important;
+  font-weight: 520 !important;
+}
+
+/* Even more specific overrides to beat fonts.css */
+.session-view-content div .classroom-label {
+  font-family: 'Space Mono', monospace !important;
+}
+
+.session-view-content div .classroom-name {
+  font-family: 'Space Mono', monospace !important;
+}
+
+/* Even more specific override for the robots section */
+.session-view-content .robots-and-programs h3 {
+  font-family: 'Bevan', serif !important;
+  font-weight: 600 !important;
+}
 
 .session-view-container {
   max-width: 1400px;
@@ -14,8 +76,8 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 32px;
-  padding-bottom: 16px;
+  margin-bottom: 0px;
+  padding-bottom: 20px;
   border-bottom: 1px solid #e0e0e0;
 }
 

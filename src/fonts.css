@@ -19,6 +19,15 @@
   font-family: var(--font-body) !important;
 }
 
+/* Override for specific classroom elements in session-view */
+.session-view-content .classroom-label {
+  font-family: 'Space Mono', monospace !important;
+}
+
+.session-view-content .classroom-name {
+  font-family: 'Bevan', serif !important;
+}
+
 /* Classrooms Page */
 .classrooms-content {
   font-family: var(--font-body) !important;
@@ -75,7 +84,6 @@ h1 {
 
 /* Heading elements - h3 tags */
 .sessions-content h3,
-.session-view-content h3,
 .classrooms-content h3,
 .login-content h3,
 .signup-content h3,
@@ -85,6 +93,12 @@ h1 {
 .modal-title {
   font-family: var(--font-heading) !important;
   font-weight: 400 !important;
+}
+
+/* Special override for session-view-content h3 to use Bevan */
+.session-view-content h3 {
+  font-family: 'Bevan', serif !important;
+  font-weight: 600 !important;
 }
 
 /* Subheading elements - h4 tags */
